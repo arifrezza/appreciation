@@ -1,0 +1,65 @@
+<div class="modal-overlay">
+  <div class="modal-container">
+
+    <!-- Header -->
+    <div class="header">
+      <span>← You are now appreciating {{ employeeName }}</span>
+      <span class="close" (click)="close()">✕</span>
+    </div>
+
+    <div class="container">
+
+      <!-- Left panel -->
+      <div class="left">
+        <textarea
+                class="main-text"
+                [(ngModel)]="userText"
+                (input)="onTextChange()"
+        ></textarea>
+
+        <div class="char-count">{{ userText.length }}</div>
+
+        <button
+                class="rewrite-btn"
+                [disabled]="userText.length < 20"
+                (click)="rewriteWithAI()"
+        >
+          ✨ Rewrite with AI
+        </button>
+
+        <div class="ai-suggestion" *ngIf="showAiSuggestion">
+          <div class="ai-label">✨ AI Generated Suggestion</div>
+          <textarea class="ai-text" [value]="aiText" readonly></textarea>
+          <button class="use-btn" (click)="useAiText()">USE</button>
+        </div>
+      </div>
+
+      <!-- Right panel -->
+      <div class="right">
+        <div class="score-wrapper">
+          <div class="circle">
+            <span>{{ score }}%</span>
+          </div>
+          <div class="score-text">
+            <strong>This is top tier.</strong><br />
+            You’re capturing exactly what makes them a star.
+          </div>
+        </div>
+
+        <div class="guide-title">Your Recognition Guide</div>
+
+        <div
+                class="guide-item"
+                *ngFor="let item of guideItems"
+                [ngClass]="item.status"
+        >
+          <span>{{ item.label }}</span>
+          <span class="icon">
+            {{ item.status === 'success' ? '✓' : '✕' }}
+          </span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

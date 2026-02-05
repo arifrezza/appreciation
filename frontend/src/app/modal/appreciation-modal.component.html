@@ -1,0 +1,62 @@
+<div class="modal-overlay" (click)="closeModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Who deserves an appreciation today?</h3>
+      <button class="close-btn" (click)="closeModal()" aria-label="Close">&times;</button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="search-box">
+        <input 
+          type="text" 
+          placeholder="Search employees..." 
+          class="search-input"
+        />
+      </div>
+      
+      <div class="employee-list">
+        <div 
+          *ngFor="let employee of employees"
+          class="employee-item"
+          [class.selected]="selectedEmployeeId === employee.id"
+          [class.already-appreciated]="employee.alreadyAppreciated"
+          (click)="!employee.alreadyAppreciated && selectEmployee(employee.id)"
+        >
+          <div class="employee-info">
+            <div class="employee-avatar">
+              {{ employee.name.charAt(0) }}
+            </div>
+            <span class="employee-name">{{ employee.name }}</span>
+            <span 
+              *ngIf="employee.alreadyAppreciated" 
+              class="appreciated-badge"
+            >
+              Already Appreciated
+            </span>
+          </div>
+          <button 
+            class="add-btn"
+            [disabled]="employee.alreadyAppreciated"
+            (click)="selectEmployee(employee.id); $event.stopPropagation()"
+          >
+            <span *ngIf="selectedEmployeeId === employee.id">✓</span>
+            <span *ngIf="selectedEmployeeId !== employee.id">+</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="modal-footer">
+      <button class="cancel-btn" (click)="closeModal()">
+        Cancel
+      </button>
+      <button 
+        class="next-btn" 
+        (click)="proceed()"
+        [disabled]="!selectedEmployeeId"
+      >
+        Next
+      </button>
+    </div>
+  </div>
+</div>
