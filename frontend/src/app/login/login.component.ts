@@ -9,7 +9,9 @@ import { AuthService } from '../services/auth.service';
 export class LoginComponent {
   username = '';
   password = '';
-  showModal = false;
+  showModal = false;           // "Who to appreciate" modal (shown after login)
+  showEditorModal = false;     // "Write appreciation" modal (shown after user picks someone)
+  selectedEmployeeName = '';   // Passed to editor modal so it can show "You are now appreciating {{ name }}"
   errorMessage = '';
   isLoading = false;
 
@@ -45,5 +47,25 @@ export class LoginComponent {
 
   closeModal(): void {
     this.showModal = false;
+  }
+
+  /** Called when user selects an employee and clicks "Next" in the appreciation modal. */
+  onProceedWithEmployee(employee: { id: number; name: string }): void {
+    this.selectedEmployeeName = employee.name;
+    this.showModal = false;       // Hide "Who to appreciate" modal
+    this.showEditorModal = true;  // Show "Write appreciation" modal with this employee's name
+  }
+
+  /** Called when user closes the appreciation editor modal (e.g. via ✕). */
+  closeEditorModal(): void {
+    this.showEditorModal = false;
+  }
+
+  // MODIFY: Called when user clicks back arrow in editor modal; returns to employee selection modal
+  // FIX: Set showModal first, then hide editor modal to prevent login form from briefly appearing
+  goBackToSelection(): void {
+    this.showModal = true;         // Show employee selection modal first
+    this.showEditorModal = false;  // Then hide editor modal (prevents login form flash)
+    // Note: selectedEmployeeName is kept, so if needed later, you know who was previously selected
   }
 }

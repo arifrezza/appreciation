@@ -13,6 +13,8 @@ interface Employee {
 })
 export class AppreciationModalComponent {
   @Output() close = new EventEmitter<void>();
+  // Emitted when user clicks "Next" with a selected employee; parent (Login) uses this to open the editor modal
+  @Output() proceedWithEmployee = new EventEmitter<{ id: number; name: string }>();
 
   // Mock employee list - replace with actual API call
   employees: Employee[] = [
@@ -30,10 +32,11 @@ export class AppreciationModalComponent {
 
   proceed(): void {
     if (this.selectedEmployeeId) {
-      // Navigate to appreciation page or open next modal
-      console.log('Selected employee ID:', this.selectedEmployeeId);
-      // TODO: Navigate to appreciation text page
-      alert(`Proceeding to appreciate employee ${this.selectedEmployeeId}`);
+      const employee = this.employees.find(e => e.id === this.selectedEmployeeId);
+      if (employee) {
+        // Notify parent so it can show appreciation-editor-modal with this employee's name
+        this.proceedWithEmployee.emit({ id: employee.id, name: employee.name });
+      }
       this.closeModal();
     }
   }

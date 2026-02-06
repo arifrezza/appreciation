@@ -3,7 +3,11 @@
 
     <!-- Header -->
     <div class="header">
-      <span>← You are now appreciating {{ employeeName }}</span>
+      <!-- MODIFY: Only the back arrow (←) is clickable, not the text -->
+      <span>
+        <span class="back-arrow" (click)="goBack()">←</span>
+        <span class="back-text"> You are now appreciating {{ employeeName }}</span>
+      </span>
       <span class="close" (click)="close()">✕</span>
     </div>
 
@@ -30,7 +34,8 @@
         <div class="ai-suggestion" *ngIf="showAiSuggestion">
           <div class="ai-label">✨ AI Generated Suggestion</div>
           <textarea class="ai-text" [value]="aiText" readonly></textarea>
-          <button class="use-btn" (click)="useAiText()">USE</button>
+          <!-- MODIFY: More descriptive button label -->
+          <button class="use-btn" (click)="useAiText()">Use Suggestion Text</button>
         </div>
       </div>
 

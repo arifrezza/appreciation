@@ -9,6 +9,8 @@ export class AppreciationEditorModalComponent {
 
   @Input() employeeName!: string;
   @Output() closed = new EventEmitter<void>();
+  // MODIFY: New event emitted when user clicks back arrow to return to employee selection
+  @Output() back = new EventEmitter<void>();
 
   userText: string = '';
   aiText: string = '';
@@ -52,5 +54,10 @@ export class AppreciationEditorModalComponent {
 
   close(): void {
     this.closed.emit();
+  }
+
+  // MODIFY: Called when user clicks back arrow; emits 'back' event so parent can show selection modal again
+  goBack(): void {
+    this.back.emit();
   }
 }

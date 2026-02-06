@@ -20,9 +20,9 @@
 
 .modal-content {
   background: white;
-  width: 90%;
-  max-width: 700px;
-  max-height: 80vh;
+  /* MODIFY: Match the "almost full-screen with margins" size from your screenshot */
+  width: min(92vw, 1100px);
+  height: min(85vh, 760px);
   border-radius: 12px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   display: flex;

@@ -1,4 +1,5 @@
-<div class="login-container">
+<!-- MODIFY: Hide login form when either modal is showing to prevent glitch during transitions -->
+<div class="login-container" *ngIf="!showModal && !showEditorModal">
   <div class="login-box">
     <h2>Welcome Back.</h2>
     <p class="subtitle">Please Login to continue</p>
@@ -46,8 +47,21 @@
   </div>
 </div>
 
-<!-- Appreciation Modal Popup -->
+<!-- Appreciation Modal Popup: "Who deserves an appreciation today?" -->
+<!-- MODIFY: Use [hidden] instead of *ngIf to keep overlay mounted and avoid flash on swap -->
 <app-appreciation-modal 
-  *ngIf="showModal"
+  [hidden]="!showModal"
   (close)="closeModal()"
+  (proceedWithEmployee)="onProceedWithEmployee($event)"
 ></app-appreciation-modal>
+<!-- When user selects someone and clicks Next, above emits proceedWithEmployee; we open the editor below -->
+
+<!-- Appreciation Editor Modal: write appreciation text for the selected person -->
+<!-- MODIFY: Use [hidden] instead of *ngIf to keep overlay mounted and avoid flash on swap -->
+<app-appreciation-editor-modal
+  [hidden]="!showEditorModal"
+  [employeeName]="selectedEmployeeName"
+  (closed)="closeEditorModal()"
+  (back)="goBackToSelection()"
+></app-appreciation-editor-modal>
+<!-- MODIFY: Added (back) handler - when user clicks back arrow, go back to employee selection -->

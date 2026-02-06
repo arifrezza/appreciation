@@ -10,11 +10,15 @@
 }
 
 .modal-container {
-  width: 90%;
-  max-width: 1200px;
+  /* MODIFY: Match the "almost full-screen with margins" size from your screenshot */
+  width: min(92vw, 1100px);
+  height: min(85vh, 760px);
   background: #f7f8fa;
   border-radius: 12px;
   overflow: hidden;
+  /* MODIFY: Allow inner content to scroll within fixed height */
+  display: flex;
+  flex-direction: column;
 }
 
 /* Base styles */
@@ -38,11 +42,30 @@
   cursor: pointer;
 }
 
+/* MODIFY: Make only the back arrow clickable (cursor pointer, hover effect) */
+.header .back-arrow {
+  cursor: pointer;
+  transition: opacity 0.2s;
+  display: inline-block;
+}
+
+.header .back-arrow:hover {
+  opacity: 0.7;
+}
+
+/* MODIFY: Text next to arrow is not clickable */
+.header .back-text {
+  cursor: default;
+}
+
 /* Layout */
 .container {
   display: flex;
   gap: 24px;
   padding: 24px;
+  /* MODIFY: Fill remaining height and scroll if needed */
+  flex: 1;
+  overflow: auto;
 }
 
 /* Left panel */
@@ -95,6 +118,8 @@
   font-weight: 700;
   margin-bottom: 8px;
   background: linear-gradient(135deg, #6d5dfc, #ff7a59);
+  /* MODIFY: Add standard property for compatibility (pairs with -webkit- prefix) */
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -108,6 +133,38 @@
   border: 1px solid #e5e7eb;
   background: #f9fafb;
   font-size: 14px;
+}
+
+/* MODIFY: Style the "USE" button under AI suggestion (green button look) */
+.use-btn {
+  margin-top: 10px;
+  /* MODIFY: Match the gradient used by "AI Generated Suggestion" label */
+  background: linear-gradient(135deg, #6d5dfc, #ff7a59);
+  color: #ffffff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.use-btn:hover {
+  /* Slightly deepen on hover while keeping gradient feel */
+  filter: brightness(0.95);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(109, 93, 252, 0.25);
+}
+
+.use-btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.use-btn:focus-visible {
+  outline: 2px solid rgba(109, 93, 252, 0.55);
+  outline-offset: 2px;
 }
 
 /* Right panel */
