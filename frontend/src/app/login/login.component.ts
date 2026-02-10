@@ -7,7 +7,7 @@ import { AuthService } from '../services/auth.service';
   styleUrls: ['./login.component.css']
 })
 export class LoginComponent {
-  username = '';
+  email = '';
   password = '';
   showModal = false;           // "Who to appreciate" modal (shown after login)
   showEditorModal = false;     // "Write appreciation" modal (shown after user picks someone)
@@ -18,17 +18,17 @@ export class LoginComponent {
   constructor(private authService: AuthService) {}
 
   login(): void {
-    if (!this.username || !this.password) {
-      this.errorMessage = 'Please enter both username and password';
+    if (!this.email || !this.password) {
+      this.errorMessage = 'Please enter both email and password';
       return;
     }
 
     this.isLoading = true;
     this.errorMessage = '';
 
-//Username and password will be sent to backedend for authentication. If successful, the modal will be shown.
- //Otherwise, an error message will be displayed.
-    this.authService.login(this.username, this.password).subscribe({
+    // Email and password will be sent to backend for authentication.
+    // If successful, the modal will be shown. Otherwise, an error message will be displayed.
+    this.authService.login(this.email, this.password).subscribe({
       next: (response) => {
         this.isLoading = false;
         if (response.success) {

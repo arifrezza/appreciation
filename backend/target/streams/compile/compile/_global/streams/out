@@ -1,0 +1,27 @@
+[0m[[0m[0minfo[0m] [0m[0m/Users/arifrezza/appreciation-platform/backend/app/repositories/UserRepository.scala:34:8: SELECT u.id, u.username, u.email, u.password_hash AS passwordHash, u.full_name AS fullName, u.designation, u.created_at AS createdAt, u.updated_at AS updatedAt, u.is_active AS isActive FROM users u WHERE u.username = ?[0m
+[0m[[0m[0minfo[0m] [0m[0m    run(query).headOption[0m
+[0m[[0m[0minfo[0m] [0m[0m       ^[0m
+[0m[[0m[0minfo[0m] [0m[0m/Users/arifrezza/appreciation-platform/backend/app/repositories/UserRepository.scala:50:21: SELECT u.id, u.username, u.email, u.password_hash AS passwordHash, u.full_name AS fullName, u.designation, u.created_at AS createdAt, u.updated_at AS updatedAt, u.is_active AS isActive FROM users u WHERE u.email = ?[0m
+[0m[[0m[0minfo[0m] [0m[0m    val result = run(query).headOption[0m
+[0m[[0m[0minfo[0m] [0m[0m                    ^[0m
+[0m[[0m[0minfo[0m] [0m[0m/Users/arifrezza/appreciation-platform/backend/app/repositories/UserRepository.scala:66:8: SELECT u.id, u.username, u.email, u.password_hash AS passwordHash, u.full_name AS fullName, u.designation, u.created_at AS createdAt, u.updated_at AS updatedAt, u.is_active AS isActive FROM users u WHERE u.id = ?[0m
+[0m[[0m[0minfo[0m] [0m[0m    run(query).headOption[0m
+[0m[[0m[0minfo[0m] [0m[0m       ^[0m
+[0m[[0m[0minfo[0m] [0m[0m/Users/arifrezza/appreciation-platform/backend/app/repositories/UserRepository.scala:80:8: SELECT u.id, u.username, u.email, u.password_hash AS passwordHash, u.full_name AS fullName, u.designation, u.created_at AS createdAt, u.updated_at AS updatedAt, u.is_active AS isActive FROM users u WHERE u.username = ?[0m
+[0m[[0m[0minfo[0m] [0m[0m    run(query).nonEmpty[0m
+[0m[[0m[0minfo[0m] [0m[0m       ^[0m
+[0m[[0m[0minfo[0m] [0m[0m/Users/arifrezza/appreciation-platform/backend/app/repositories/UserRepository.scala:94:8: INSERT INTO users (username,email,password_hash,full_name,designation,created_at,updated_at,is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)[0m
+[0m[[0m[0minfo[0m] [0m[0m    run(query)[0m
+[0m[[0m[0minfo[0m] [0m[0m       ^[0m
+[0m[[0m[0minfo[0m] [0m[0m/Users/arifrezza/appreciation-platform/backend/app/repositories/UserRepository.scala:119:8: SELECT u.id, u.username, u.email, u.password_hash AS passwordHash, u.full_name AS fullName, u.designation, u.created_at AS createdAt, u.updated_at AS updatedAt, u.is_active AS isActive FROM users u WHERE u.is_active[0m
+[0m[[0m[0minfo[0m] [0m[0m    run(query)[0m
+[0m[[0m[0minfo[0m] [0m[0m       ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/Users/arifrezza/appreciation-platform/backend/app/services/PasswordService.scala:32:19: method bcrypt in class BCryptStrOps is deprecated (since 4.3.0): Use boundedBcrypt(rounds: Int) instead.[0m
+[0m[[0m[33mwarn[0m] [0m[0mMore information at https://github.com/t3hnar/scala-bcrypt/issues/23[0m
+[0m[[0m[33mwarn[0m] [0m[0m    plainPassword.bcrypt(bcryptRounds)[0m
+[0m[[0m[33mwarn[0m] [0m[0m                  ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/Users/arifrezza/appreciation-platform/backend/app/services/PasswordService.scala:45:19: method isBcryptedSafe in class BCryptStrOps is deprecated (since 4.3.0): Use isBoundedBcryptedSafe(hash: String) instead.[0m
+[0m[[0m[33mwarn[0m] [0m[0mMore information at https://github.com/t3hnar/scala-bcrypt/issues/23[0m
+[0m[[0m[33mwarn[0m] [0m[0m    plainPassword.isBcryptedSafe(hashedPassword).getOrElse(false)[0m
+[0m[[0m[33mwarn[0m] [0m[0m                  ^[0m
+[0m[[0m[33mwarn[0m] [0m[0mtwo warnings found[0m
