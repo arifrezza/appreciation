@@ -5,12 +5,12 @@
     <p class="subtitle">Please Login to continue</p>
     
     <div class="form-group">
-      <label for="username">Username</label>
+      <label for="email">Email</label>
       <input 
-        id="username"
-        type="text" 
-        [(ngModel)]="username" 
-        placeholder="Enter username"
+        id="email"
+        type="email" 
+        [(ngModel)]="email" 
+        placeholder="Enter email"
         (keyup.enter)="login()"
         [disabled]="isLoading"
       />
@@ -41,9 +41,7 @@
       <span *ngIf="isLoading">Loading...</span>
     </button>
     
-    <div class="demo-credentials">
-      <small>Demo: username: <strong>admin</strong>, password: <strong>password</strong></small>
-    </div>
+
   </div>
 </div>
 
