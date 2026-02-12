@@ -2,58 +2,53 @@ package services
 
 import com.github.t3hnar.bcrypt._
 import javax.inject.Singleton
-import scala.util.{Success, Try}
+import scala.util.Try
 
 /**
- * PasswordService handles password hashing and verification using BCrypt
+ * PasswordService - Handles password hashing and verification using BCrypt
  * 
- * BCrypt is a secure one-way hashing algorithm designed for passwords
- * - Automatically salts passwords
- * - Configurable work factor (computational cost)
- * - Industry standard for password storage
+ * BCrypt is a one-way hashing algorithm:
+ * - "One-way" = you can't reverse the hash to get the password
+ * - Automatically adds random "salt" to prevent rainbow table attacks
+ * - Deliberately slow to prevent brute-force attacks
+ * 
+ * Called by: AuthService.authenticateAndGetUser()
  */
 @Singleton
 class PasswordService {
   
-  // BCrypt work factor (rounds)
-  // Higher = more secure but slower
-  // 10 = good balance (2^10 = 1024 iterations)
-  private val bcryptRounds = 10
+  // BCrypt rounds: 10 = 2^10 = 1024 iterations (good balance of security/speed)
+  private val bcryptRounds: Int = 10
   
   /**
-   * Hash a plain text password using BCrypt
+   * Hash a password for storage in database (used during registration)
    * 
-   * @param plainPassword The password to hash
-   * @return Hashed password string (includes salt)
-   * 
-   * Example output: $2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy
+   * Example: "myPassword123" → "$2a$10$N9qo8uLOickgx2ZMRZoMye..."
    */
   def hashPassword(plainPassword: String): String = {
     plainPassword.bcrypt(bcryptRounds)
   }
   
   /**
-   * Verify a plain text password against a hashed password
+   * Verify a password against stored hash (used during login)
    * 
-   * @param plainPassword The password to verify
-   * @param hashedPassword The stored BCrypt hash
-   * @return true if password matches, false otherwise
-   * 
-   * This is SAFE against timing attacks
+   * @param plainPassword The password user typed at login
+   * @param hashedPassword The hash stored in database
+   * @return true if password is correct, false otherwise
    */
   def verifyPassword(plainPassword: String, hashedPassword: String): Boolean = {
-    plainPassword.isBcryptedSafe(hashedPassword).getOrElse(false)
+    // STEP 1: BCrypt compares the plain password against the stored hash
+    // It extracts the salt from hashedPassword, hashes plainPassword with it,
+    // then compares the two hashes
+    val verificationResult: Try[Boolean] = plainPassword.isBcryptedSafe(hashedPassword)
+    
+    // STEP 2: Return result (default to false if any error occurred)
+    val isMatch: Boolean = verificationResult.getOrElse(false)
+    isMatch
   }
   
   /**
-   * Check if a password meets minimum requirements
-   * 
-   * Requirements:
-   * - At least 8 characters
-   * - Not empty
-   * 
-   * @param password The password to validate
-   * @return true if valid, false otherwise
+   * Check if a password meets minimum requirements (at least 3 characters)
    */
   def isValidPassword(password: String): Boolean = {
     password != null && password.length >= 3

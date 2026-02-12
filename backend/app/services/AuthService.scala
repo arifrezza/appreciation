@@ -7,12 +7,11 @@ import scala.concurrent.{ExecutionContext, Future}
 import play.api.Logging
 
 /**
- * AuthService handles authentication logic
+ * AuthService - Core authentication logic
  * 
- * Now uses:
- * - MySQL database via UserRepository
- * - BCrypt password verification via PasswordService
- * - Async/non-blocking operations (Future-based)
+ * FLOW: Email+Password → Find user in DB → Check active → Verify password → Return user
+ * 
+ * Called by: AuthController.login()
  */
 @Singleton
 class AuthService @Inject()(
@@ -21,92 +20,74 @@ class AuthService @Inject()(
 )(implicit ec: ExecutionContext) extends Logging {
   
   /**
-   * Authenticate user with email and password
-   * 
-   * Flow:
-   * 1. Look up user by email in database (async)
-   * 2. Check if user exists and is active
-   * 3. Verify password (demo mode: plain text comparison)
-   * 4. Return user data if successful
-   * 
-   * @param email Email to authenticate
-   * @param password Plain text password
-   * @return Future[Option[User]] - User if authenticated, None otherwise
-   */
-  def authenticate(email: String, password: String): Future[Option[User]] = {
-    logger.debug(s"Attempting login for email: $email")
-    userRepository.findByEmail(email).map {
-      case Some(user) if user.isActive =>
-        logger.debug(s"User found - isActive: ${user.isActive}, hash: ${user.passwordHash}")
-        // User found and active - verify password using BCrypt
-        val isValid = passwordService.verifyPassword(password, user.passwordHash)
-        logger.debug(s"Password verification result: $isValid")
-        if (isValid) {
-          Some(user)
-        } else {
-          None // Password incorrect
-        }
-      case Some(user) =>
-        logger.debug(s"User found but isActive=${user.isActive}")
-        None
-      case None =>
-        logger.debug(s"No user found for email: $email")
-        None
-    }
-  }
-  
-  /**
-   * Authenticate and return user response (without password hash)
-   * 
-   * @param email Email to authenticate
-   * @param password Plain text password
-   * @return Future[Option[UserResponse]] - User data if authenticated
+   * Main method called by AuthController
+   * Authenticates and returns UserResponse (without password hash)
    */
   def authenticateAndGetUser(email: String, password: String): Future[Option[UserResponse]] = {
-    authenticate(email, password).map {
-      case Some(user) => Some(UserResponse.fromUser(user))
-      case None => None
+    logger.debug(s"STEP 1: Starting authentication for email: $email")
+    
+    // STEP 2: Query database for user with this email
+    // ──────────────────────────────────────────────────────────────────────
+    // NEXT: Go to UserRepository.findByEmail() to see the database query
+    // ──────────────────────────────────────────────────────────────────────
+    val userLookupFuture: Future[Option[User]] = userRepository.findByEmail(email)
+    
+    // STEP 3: When database returns, process the result
+    userLookupFuture.map { lookupResult: Option[User] =>
+      
+      lookupResult match {
+        case None =>
+          // No user found with this email
+          logger.debug("STEP 3: No user found with this email")
+          None
+          
+        case Some(user) =>
+          // STEP 4: Check if account is active
+          val isActive: Boolean = user.isActive
+          logger.debug(s"STEP 4: User found, isActive = $isActive")
+          
+          if (!isActive) {
+            logger.debug("STEP 4: Account is not active, denying login")
+            None
+          } else {
+            // STEP 5: Verify the password using BCrypt
+            // ──────────────────────────────────────────────────────────────────────
+            // NEXT: Go to PasswordService.verifyPassword() to see BCrypt verification
+            // ──────────────────────────────────────────────────────────────────────
+            val storedHash: String = user.passwordHash
+            val passwordMatches: Boolean = passwordService.verifyPassword(password, storedHash)
+            logger.debug(s"STEP 5: Password verification result = $passwordMatches")
+            
+            if (passwordMatches) {
+              // STEP 6: Success! Convert User to UserResponse (removes password hash)
+              logger.debug("STEP 6: Authentication successful!")
+              Some(UserResponse.fromUser(user))
+            } else {
+              logger.debug("STEP 5: Password incorrect, denying login")
+              None
+            }
+          }
+      }
     }
   }
   
   /**
-   * Generate a JWT token for authenticated user
-   * 
-   * TODO: Implement proper JWT token generation with:
-   * - User ID in payload
-   * - Expiration time
-   * - Secret key signing
-   * - Token refresh mechanism
-   * 
-   * For now, returns a placeholder token
-   * 
-   * @param userId User ID to encode in token
-   * @return JWT token string
+   * Generate a JWT token for a user (placeholder - TODO: implement real JWT)
    */
   def generateToken(userId: Long): String = {
-    // Placeholder - implement proper JWT
-    // Recommended library: authentikat-jwt or pdi-jwt
-    s"jwt-token-user-$userId-${System.currentTimeMillis()}"
+    val timestamp: Long = System.currentTimeMillis()
+    s"jwt-token-user-$userId-$timestamp"
   }
   
   /**
-   * Validate a JWT token and return user ID
-   * 
-   * TODO: Implement proper JWT validation
-   * 
-   * @param token JWT token string
-   * @return Future[Option[Long]] - User ID if valid, None otherwise
+   * Validate a JWT token (TODO: implement real validation)
    */
-  def validateToken(token: String): Future[Option[Long]] = Future {
-    // Placeholder - implement proper JWT validation
-    None
+  def validateToken(token: String): Future[Option[Long]] = {
+    Future.successful(None)
   }
   
   /**
-   * Get user by ID (for token-based auth)
-   * 
-   * @param userId User ID
-   * @return Future[Option[UserResponse]] - User data if found
+   * Get user by ID (for token-based requests after initial login)
    */
   def getUserById(userId: Long): Future[Option[UserResponse]] = {
     userRepository.findById(userId).map {

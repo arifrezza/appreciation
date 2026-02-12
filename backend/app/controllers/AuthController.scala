@@ -8,91 +8,87 @@ import play.api.Logging
 import services.AuthService
 import models.{LoginRequest, UserResponse}
 
+/**
+ * AuthController - Handles user authentication (login)
+ * 
+ * FLOW: Request → Validate JSON → AuthService.authenticate → Generate token → Response
+ */
 @Singleton
 class AuthController @Inject()(
   cc: ControllerComponents,
   authService: AuthService
 )(implicit ec: ExecutionContext) extends AbstractController(cc) with Logging {
   
-  // JSON formatter for UserResponse
   implicit val userResponseWrites: Writes[UserResponse] = Json.writes[UserResponse]
 
   /**
-   * Login endpoint with MySQL database authentication
-   * 
    * POST /api/login
-   * Body: { "username": "...", "password": "..." }
+   * Body: { "email": "user@example.com", "password": "secret" }
    * 
-   * Flow:
-   * 1. Parse and validate JSON request
-   * 2. Call AuthService.authenticateAndGetUser (async database lookup)
-   * 3. If authenticated:
-   *    - Generate JWT token
-   *    - Return user data + token
-   * 4. If not authenticated:
-   *    - Return 401 Unauthorized
-   * 
-   * Returns: 
-   * Success: { "success": true, "token": "...", "user": {...} }
-   * Failure: { "success": false, "message": "..." }
+   * Returns: { "success": true, "token": "...", "user": {...} }
+   *      OR: { "success": false, "message": "..." }
    */
   def login: Action[JsValue] = Action.async(parse.json) { request =>
-    request.body.validate[LoginRequest].fold(
-      errors => {
-        // JSON validation failed
+    // STEP 1: Parse JSON into LoginRequest object
+    val validationResult: JsResult[LoginRequest] = request.body.validate[LoginRequest]
+    
+    validationResult match {
+      case JsError(_) =>
+        // JSON was invalid - return error
         Future.successful(BadRequest(Json.obj(
           "success" -> false,
           "message" -> "Invalid request payload"
         )))
-      },
-      loginRequest => {
-        // Log incoming request values
-        logger.debug(s"Received login request: email='${loginRequest.email}', password length=${loginRequest.password.length}")
         
-        // Authenticate user against database
-        authService.authenticateAndGetUser(
-          loginRequest.email, 
-          loginRequest.password
-        ).map {
-          case Some(user) =>
-            // Authentication successful
-            val token = authService.generateToken(user.id)
-            Ok(Json.obj(
-              "success" -> true,
-              "token" -> token,
-              "user" -> Json.toJson(user)
-            ))
-            
-          case None =>
-            // Authentication failed (user not found or wrong password)
-            Unauthorized(Json.obj(
-              "success" -> false,
-              "message" -> "Invalid username or password"
-            ))
+      case JsSuccess(loginRequest, _) =>
+        // STEP 2: Extract email and password
+        val email: String = loginRequest.email
+        val password: String = loginRequest.password
+        logger.debug(s"Login attempt for email: $email")
+        
+        // STEP 3: Call AuthService to authenticate (this queries the database)
+        // ──────────────────────────────────────────────────────────────────────
+        // NEXT: Go to AuthService.authenticateAndGetUser() to follow the flow
+        // ──────────────────────────────────────────────────────────────────────
+        val authResultFuture: Future[Option[UserResponse]] = 
+          authService.authenticateAndGetUser(email, password)
+        
+        // STEP 4: Handle the result when it comes back
+        authResultFuture.map { authResult: Option[UserResponse] =>
+          authResult match {
+            case Some(user) =>
+              // SUCCESS - generate token and return user data
+              val token: String = authService.generateToken(user.id)
+              Ok(Json.obj(
+                "success" -> true,
+                "token" -> token,
+                "user" -> Json.toJson(user)
+              ))
+              
+            case None =>
+              // FAILED - wrong email or password
+              Unauthorized(Json.obj(
+                "success" -> false,
+                "message" -> "Invalid username or password"
+              ))
+          }
         }.recover {
+          // STEP 5: Handle database errors
           case ex: Exception =>
-            // Database error or other exception
             play.api.Logger("auth").error("Login error", ex)
             InternalServerError(Json.obj(
               "success" -> false,
               "message" -> "An error occurred during login"
             ))
         }
-      }
-    )
+    }
   }
   
   /**
-   * Get current user info (requires valid token)
-   * 
-   * GET /api/me
-   * Header: Authorization: Bearer <token>
-   * 
-   * TODO: Implement token validation middleware
+   * GET /api/me - Get current user info (requires valid token)
+   * TODO: Implement token validation
    */
   def getCurrentUser: Action[AnyContent] = Action.async { request =>
-    // TODO: Extract and validate token from Authorization header
-    // For now, just return unauthorized
     Future.successful(Unauthorized(Json.obj(
       "success" -> false,
       "message" -> "Token validation not yet implemented"

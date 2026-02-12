@@ -2,6 +2,7 @@
 # This file defines all application routes (Higher priority routes first)
 # Command to start the server with proxy configuration for Angular development:
 # ng serve --proxy-config src/proxy.conf.json
+# sbt -jvm-debug 5005 run
 
 # Home page - serves Angular app
 GET     /                           controllers.HomeController.index
