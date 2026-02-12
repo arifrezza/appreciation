@@ -37,14 +37,32 @@
           <!-- MODIFY: More descriptive button label -->
           <button class="use-btn" (click)="useAiText()">Use Suggestion Text</button>
         </div>
+
+        <!-- POST button pinned at bottom center -->
+        <div class="post-btn-wrapper">
+          <button
+                  class="submit-btn"
+                  [disabled]="!canSubmit()"
+                  (click)="postAppreciation()"
+          >
+            POST
+          </button>
+        </div>
+
+
+
       </div>
 
       <!-- Right panel -->
       <div class="right">
         <div class="score-wrapper">
-          <div class="circle">
+          <div
+                  class="circle"
+                  [style.--score.%]="score"
+          >
             <span>{{ score }}%</span>
           </div>
+
           <div class="score-text">
             <strong>This is top tier.</strong><br />
             You’re capturing exactly what makes them a star.
@@ -59,10 +77,12 @@
                 [ngClass]="item.status"
         >
           <span>{{ item.label }}</span>
-          <span class="icon">
-            {{ item.status === 'success' ? '✓' : '✕' }}
-          </span>
+
+          <span class="icon" *ngIf="item.status === 'success'">✓</span>
+          <span class="icon" *ngIf="item.status === 'error'">✕</span>
+          <span class="icon neutral-icon" *ngIf="item.status === 'neutral'">●</span>
         </div>
+
       </div>
 
     </div>
