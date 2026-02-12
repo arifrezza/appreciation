@@ -47,11 +47,14 @@
 
 <!-- Appreciation Modal Popup: "Who deserves an appreciation today?" -->
 <!-- MODIFY: Use [hidden] instead of *ngIf to keep overlay mounted and avoid flash on swap -->
-<app-appreciation-modal 
-  [hidden]="!showModal"
-  (close)="closeModal()"
-  (proceedWithEmployee)="onProceedWithEmployee($event)"
+<app-appreciation-modal
+        *ngIf="showModal"
+        [currentUserId]="loggedInUser?.id"
+        (close)="closeModal()"
+        (proceedWithEmployee)="onProceedWithEmployee($event)"
 ></app-appreciation-modal>
+
+
 <!-- When user selects someone and clicks Next, above emits proceedWithEmployee; we open the editor below -->
 
 <!-- Appreciation Editor Modal: write appreciation text for the selected person -->

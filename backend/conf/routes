@@ -10,5 +10,9 @@ GET     /                           controllers.HomeController.index
 # Auth API
 POST    /api/login                  controllers.AuthController.login
 
+# User API to fetch all users except the current user
+GET     /api/users/:currentUserId     controllers.UserController.getAllUsers(currentUserId: Long)
+
+
 # Static assets from public directory
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)

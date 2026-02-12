@@ -7,6 +7,7 @@ export interface LoginResponse {
   success: boolean;
   token?: string;
   user?: {
+    id: number;        // 🔥 ADD THIS (IMPORTANT)
     username: string;
     name: string;
   };
@@ -17,17 +18,18 @@ export interface LoginResponse {
   providedIn: 'root'
 })
 export class AuthService {
+
   private tokenKey = 'auth_token';
   private isAuthenticatedSubject = new BehaviorSubject<boolean>(this.hasToken());
-  
+
   isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
 
   constructor(private http: HttpClient) {}
 
   login(email: string, password: string): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>('/api/login', { 
-      email, 
-      password 
+    return this.http.post<LoginResponse>('/api/login', {
+      email,
+      password
     }).pipe(
       tap(response => {
         if (response.success && response.token) {
