@@ -10,6 +10,7 @@ libraryDependencies ++= Seq(
   guice,
   jdbc,
   "com.typesafe.play" %% "play-json" % "2.9.4",
+  "com.typesafe.play" %% "play-ahc-ws" % "2.9.4",
   "io.getquill" %% "quill-jdbc" % "4.8.0",
   "mysql" % "mysql-connector-java" % "8.0.33",
   "com.github.t3hnar" %% "scala-bcrypt" % "4.3.0",

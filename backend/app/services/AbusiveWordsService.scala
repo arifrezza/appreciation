@@ -6,6 +6,7 @@ import scala.io.Source
 import scala.util.matching.Regex
 import play.api.Logging
 
+// TO CHECK LOCAL ABUSIVE WORDS FROM FILE
 @Singleton
 class AbusiveWordsService @Inject()(env: Environment) extends Logging {
 
