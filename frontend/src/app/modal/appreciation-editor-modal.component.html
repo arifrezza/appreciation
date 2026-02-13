@@ -69,7 +69,14 @@
           </div>
         </div>
 
-        <div class="guide-title">Your Recognition Guide</div>
+        <div class="guide-title-wrapper">
+          <div class="guide-title">Your Recognition Guide</div>
+
+          <div class="checking-text" *ngIf="isCheckingLanguage">
+            Checking<span class="dots"></span>
+          </div>
+        </div>
+
 
         <div
                 class="guide-item"

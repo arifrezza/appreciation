@@ -24,6 +24,8 @@ export class AppreciationEditorModalComponent {
 
   // 🔥 Circular score (starts at 0)
   score: number = 0;
+  isCheckingLanguage: boolean = false;
+
 
   // 🔒 Internal flags
   private hasStartedTyping = false;
@@ -79,9 +81,10 @@ export class AppreciationEditorModalComponent {
 
     // ⏱ ALWAYS schedule a fresh check
     this.typingTimer = setTimeout(() => {
-      // IMPORTANT: use latest text, not stale copy
+      this.isCheckingLanguage = true; // 🔴 START CHECKING
       this.runLocalLanguageCheck(this.userText.trim());
     }, this.TYPING_DELAY);
+
 
     // AI suggestion logic (unchanged)
     if (text.length >= 20) {
@@ -113,6 +116,7 @@ export class AppreciationEditorModalComponent {
 
     this.languageService.checkLanguage(text).subscribe({
       next: (res) => {
+          this.isCheckingLanguage = false; // ✅ STOP CHECKING
         languageRule.status = res.abusive ? 'error' : 'success';
       },
       error: () => {
@@ -137,20 +141,18 @@ canSubmit(): boolean {
 }
 
 postAppreciation(): void {
-  const payload = {
-    employeeName: this.employeeName,
-    appreciationText: this.userText
-  };
 
-  console.log('POST appreciation payload:', payload);
+  // Demo popup
+  alert("🙏 Appreciation posted successfully!");
 
-  // TODO:
-  // 1. Call backend POST /api/appreciation
-  // 2. Handle success (toast + close modal)
-  // 3. Handle error (show error message)
+  // Reset editor (blank text field + reset state)
+  this.resetToInitialState();
 
-  this.close();
+  // IMPORTANT:
+  // DO NOT call this.close()
+  // because we want to stay in the editor modal
 }
+
 
 
 
@@ -194,6 +196,8 @@ postAppreciation(): void {
     this.score = 0;
     this.hasStartedTyping = false;
     this.lastGeneratedFor = '';
+    this.isCheckingLanguage = false;
+
 
     this.guideItems.forEach(item => {
       item.status = 'neutral';

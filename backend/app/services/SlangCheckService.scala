@@ -10,7 +10,7 @@ import play.api.libs.json._
 
 import scala.concurrent.Future
 
-// TO CHECK SLANG / ABUSIVE LANGUAGE USING OPENAI API
+// TO CHECK ABUSIVE LANGUAGE USING OPENAI API
 @Singleton
 class SlangCheckService @Inject()(
 																	 ws: WSClient
@@ -22,7 +22,7 @@ class SlangCheckService @Inject()(
 			"OPENAI_API_KEY",
 			throw new RuntimeException("OPENAI_API_KEY environment variable not set")
 		)
-	logger.info(s"API Key loaded? ${apiKey.nonEmpty}")
+
 
 
 

@@ -111,3 +111,11 @@ input:disabled {
 .demo-credentials strong {
   color: #667eea;
 }
+
+@media (max-width: 480px) {
+  .login-box {
+    width: 90%;
+    padding: 20px;
+  }
+}
+
