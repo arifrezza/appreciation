@@ -10,13 +10,11 @@
 }
 
 .modal-container {
-  /* MODIFY: Match the "almost full-screen with margins" size from your screenshot */
   width: min(92vw, 1100px);
   height: min(85vh, 760px);
   background: #f7f8fa;
   border-radius: 12px;
   overflow: hidden;
-  /* MODIFY: Allow inner content to scroll within fixed height */
   display: flex;
   flex-direction: column;
 }
@@ -26,7 +24,6 @@
   box-sizing: border-box;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
-
 
 /* Header */
 .header {
@@ -43,7 +40,6 @@
   cursor: pointer;
 }
 
-/* MODIFY: Make only the back arrow clickable (cursor pointer, hover effect) */
 .header .back-arrow {
   cursor: pointer;
   transition: opacity 0.2s;
@@ -54,7 +50,6 @@
   opacity: 0.7;
 }
 
-/* MODIFY: Text next to arrow is not clickable */
 .header .back-text {
   cursor: default;
 }
@@ -64,11 +59,19 @@
   display: flex;
   gap: 24px;
   padding: 24px;
-  /* MODIFY: Fill remaining height and scroll if needed */
   flex: 1;
   overflow: auto;
 }
 
+/* LEFT PANEL */
+.left {
+  flex: 2;
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
 
 .main-text {
   width: 100%;
@@ -76,23 +79,18 @@
   resize: none;
   font-size: 15px;
   line-height: 1.6;
-
   padding: 14px 16px;
   border-radius: 10px;
-
   border: 1px solid #cbd5e1;
   background: #ffffff;
-
   outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-
 .main-text:focus {
-  border-color: #6d5dfc;          /* purple highlight */
+  border-color: #6d5dfc;
   box-shadow: 0 0 0 3px rgba(109, 93, 252, 0.15);
 }
-
 
 .char-count {
   text-align: right;
@@ -126,7 +124,6 @@
   font-weight: 700;
   margin-bottom: 8px;
   background: linear-gradient(135deg, #6d5dfc, #ff7a59);
-  /* MODIFY: Add standard property for compatibility (pairs with -webkit- prefix) */
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -143,10 +140,8 @@
   font-size: 14px;
 }
 
-/* MODIFY: Style the "USE" button under AI suggestion (green button look) */
 .use-btn {
   margin-top: 10px;
-  /* MODIFY: Match the gradient used by "AI Generated Suggestion" label */
   background: linear-gradient(135deg, #6d5dfc, #ff7a59);
   color: #ffffff;
   border: none;
@@ -155,27 +150,49 @@
   font-weight: 700;
   font-size: 14px;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .use-btn:hover {
-  /* Slightly deepen on hover while keeping gradient feel */
   filter: brightness(0.95);
   transform: translateY(-1px);
   box-shadow: 0 6px 16px rgba(109, 93, 252, 0.25);
 }
 
-.use-btn:active {
-  transform: translateY(0);
-  box-shadow: none;
+.post-btn-wrapper {
+  margin-top: auto;
+  display: flex;
+  justify-content: center;
+  padding-top: 20px;
 }
 
-.use-btn:focus-visible {
-  outline: 2px solid rgba(109, 93, 252, 0.55);
-  outline-offset: 2px;
+/* POST Button */
+.submit-btn {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #ffffff;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  min-width: 160px;
+  letter-spacing: 0.5px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-/* Right panel */
+.submit-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(34, 197, 94, 0.35);
+}
+
+.submit-btn:disabled {
+  background: #d1d5db;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+/* RIGHT PANEL */
 .right {
   width: 340px;
   background: #ffffff;
@@ -190,48 +207,147 @@
   margin-bottom: 20px;
 }
 
-.circle {
-  width: 70px;
-  height: 70px;
-  border-radius: 50%;
+/* ============================
+   SVG CIRCULAR PROGRESS
+   ============================ */
 
-  /* 🔥 Animated conic gradient */
-  background: conic-gradient(
-    #f97316 0% var(--score),
-    #e5e7eb var(--score) 100%
-  );
+.circle-wrapper {
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
 
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.progress-ring {
+  transform: rotate(-90deg);
+}
 
-  /* 🔥 Smooth animation */
-  transition: background 0.8s ease-in-out;
+.ring-bg {
+  fill: none;
+  stroke: #e5e7eb;
+  stroke-width: 6;
+}
+
+.ring-progress {
+  fill: none;
+  stroke-width: 6;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.6s ease, stroke 0.4s ease;
+}
+
+/* Score Colors */
+.ring-progress.low {
+  stroke: #ef4444;
+}
+
+.ring-progress.medium {
+  stroke: #f97316;
+}
+
+.ring-progress.high {
+  stroke: #22c55e;
+  filter: drop-shadow(0 0 6px rgba(34,197,94,0.5));
 }
 
 
-.circle span {
-  background: #ffffff;
-  width: 52px;
-  height: 52px;
+.score-value {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
   border-radius: 50%;
+
+  background: white;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
+  font-size: 14px;
   font-weight: 700;
 
-  color: #f97316;
+  transition: width 0.4s ease, height 0.4s ease, font-size 0.4s ease, box-shadow 0.4s ease, background 0.4s ease;
+}
 
-  /* 🔥 Subtle number animation */
-  transition: color 0.3s ease;
+.score-value.thinking {
+  animation: thinkingPulse 1.4s ease-in-out infinite, shake 0.5s ease-in-out infinite;
+  width: 90px;
+  height: 90px;
+  font-size: 22px;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+  25% { transform: translate(-50%, -50%) rotate(-2deg); }
+  50% { transform: translate(-50%, -50%) rotate(0deg); }
+  75% { transform: translate(-50%, -50%) rotate(2deg); }
+}
+
+@keyframes thinkingPulse {
+  0% {
+    box-shadow: 
+      0 0 0px rgba(6, 182, 212, 0.2),
+      0 0 0px rgba(6, 182, 212, 0.1);
+    background: #ffffff;
+  }
+
+  50% {
+    box-shadow: 
+      0 0 20px rgba(6, 182, 212, 0.7),
+      0 0 40px rgba(6, 182, 212, 0.4),
+      0 0 60px rgba(6, 182, 212, 0.2);
+    background: #a5f3fc; /* cyan */
+  }
+
+  100% {
+    box-shadow: 
+      0 0 0px rgba(6, 182, 212, 0.2),
+      0 0 0px rgba(6, 182, 212, 0.1);
+    background: #ffffff;
+  }
 }
 
 
+.checking-text {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ef4444;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.dots::after {
+  content: '';
+  display: inline-block;
+  width: 1.5em;
+  text-align: left;
+  vertical-align: baseline;
+  animation: dotAnimation 1.4s infinite;
+}
+
+@keyframes dotAnimation {
+  0%   { content: ''; }
+  25%  { content: '.'; }
+  50%  { content: '..'; }
+  75%  { content: '...'; }
+  100% { content: ''; }
+}
+
+
+/* GUIDE SECTION */
 .guide-title {
   font-size: 15px;
   font-weight: 700;
   margin-bottom: 16px;
 }
+
+.guide-title-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline; /* keeps same line */
+}
+
 
 .guide-item {
   display: flex;
@@ -255,6 +371,12 @@
   color: #991b1b;
 }
 
+.guide-item.neutral {
+  background: #f9fafb;
+  border-color: #e5e7eb;
+  color: #6b7280;
+}
+
 .icon {
   width: 22px;
   height: 22px;
@@ -275,154 +397,23 @@
   background: #ef4444;
 }
 
-/* Neutral (initial) guide state */
-.guide-item.neutral {
-  background: #f9fafb;
-  border-color: #e5e7eb;
-  color: #6b7280;
-}
-
-.neutral-icon {
-  background: #d1d5db;
-  color: #6b7280;
-}
-
-.left {
-  flex: 2;
-  background: #ffffff;
-  border-radius: 10px;
-  padding: 20px;
-
-  /* 🔥 Important */
-  display: flex;
-  flex-direction: column;
-}
-
-.post-btn-wrapper {
-  margin-top: auto;          /* pushes button to bottom */
-  display: flex;
-  justify-content: center;   /* centers horizontally */
-  padding-top: 20px;
-}
-
-/* ===============================
-   POST Button Styling
-   =============================== */
-
-.submit-btn {
-  background: linear-gradient(135deg, #22c55e, #16a34a);
-  color: #ffffff;
-  border: none;
-  padding: 14px 28px;
-  border-radius: 14px;
-  font-size: 15px;
-  font-weight: 800;
-  cursor: pointer;
-  min-width: 160px;
-  letter-spacing: 0.5px;
-
-  transition: transform 0.15s ease,
-              box-shadow 0.15s ease,
-              filter 0.15s ease;
-}
-
-.submit-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 24px rgba(34, 197, 94, 0.35);
-  filter: brightness(1.05);
-}
-
-.submit-btn:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: none;
-}
-
-.submit-btn:disabled {
-  background: #d1d5db;
-  color: #6b7280;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-/* Title wrapper */
-.guide-title-wrapper {
-  display: flex;
-  align-items: baseline;   /* 🔥 important change */
-  justify-content: space-between;
-}
-
-
-/* RED checking text */
-.checking-text {
-  font-size: 18px;
-  font-weight: 700;
-  color: #ef4444;
-  line-height: 1;         /* 🔥 prevents vertical shift */
-}
-
-
-
-/* Animated dots */
-.dots::after {
-  content: '';
-  display: inline-block;
-  width: 1.5em;
-  text-align: left;
-  vertical-align: baseline;  /* 🔥 align properly */
-  animation: dotAnimation 1.4s infinite;
-}
-
-
-/* Dot animation */
-@keyframes dotAnimation {
-  0%   { content: ''; }
-  25%  { content: '.'; }
-  50%  { content: '..'; }
-  75%  { content: '...'; }
-  100% { content: ''; }
-}
-
-/* 🔥 Mobile Responsive */
+/* Mobile */
 @media (max-width: 768px) {
-
   .modal-container {
     width: 95vw;
     height: 90vh;
   }
 
   .container {
-    flex-direction: column;  /* stack vertically */
+    flex-direction: column;
     gap: 16px;
   }
 
   .right {
-    width: 100%;             /* full width */
-  }
-
-  .left {
     width: 100%;
   }
 
-  .header {
-    padding: 12px 16px;
-  }
-
-  .modal-container {
-    border-radius: 8px;
-  }
-
   .main-text {
-    height: 180px;           /* smaller textarea */
+    height: 180px;
   }
-
-  .score-wrapper {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
 }
-
-
-
-
-

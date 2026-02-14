@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { LanguageService } from '../services/language.service';
 
 /**
@@ -11,9 +11,17 @@ type RuleStatus = 'neutral' | 'success' | 'error';
   templateUrl: './appreciation-editor-modal.component.html',
   styleUrls: ['./appreciation-editor-modal.component.css']
 })
-export class AppreciationEditorModalComponent {
+export class AppreciationEditorModalComponent implements AfterViewInit {
+
+    @ViewChild('mainTextarea') mainTextarea!: ElementRef<HTMLTextAreaElement>;
 
     constructor(private languageService: LanguageService) {}
+
+    ngAfterViewInit(): void {
+      setTimeout(() => {
+        this.mainTextarea?.nativeElement?.focus();
+      }, 300);
+    }
   @Input() employeeName!: string;
   @Output() closed = new EventEmitter<void>();
   @Output() back = new EventEmitter<void>();
@@ -25,6 +33,11 @@ export class AppreciationEditorModalComponent {
   // 🔥 Circular score (starts at 0)
   score: number = 0;
   isCheckingLanguage: boolean = false;
+
+  radius = 34;
+  circumference = 2 * Math.PI * this.radius;
+  dashOffset = this.circumference;
+
 
 
   // 🔒 Internal flags
@@ -70,7 +83,8 @@ export class AppreciationEditorModalComponent {
     // 🟢 First typing → bump score once
     if (!this.hasStartedTyping) {
       this.hasStartedTyping = true;
-      this.score = 5;
+      this.animateScore(5);
+
     }
 
     // 🔁 ALWAYS clear previous timer
@@ -122,6 +136,7 @@ export class AppreciationEditorModalComponent {
       error: () => {
         // Fail-safe: don't block user on API error
         languageRule.status = 'neutral';
+        this.isCheckingLanguage = false;
       }
     });
 
@@ -197,6 +212,8 @@ postAppreciation(): void {
     this.hasStartedTyping = false;
     this.lastGeneratedFor = '';
     this.isCheckingLanguage = false;
+    this.updateProgress(0);
+
 
 
     this.guideItems.forEach(item => {
@@ -208,4 +225,32 @@ postAppreciation(): void {
       this.typingTimer = null;
     }
   }
+
+get scoreClass(): string {
+  if (this.score < 40) return 'low';
+  if (this.score < 70) return 'medium';
+  return 'high';
+}
+
+private animateScore(target: number): void {
+  const interval = setInterval(() => {
+    if (this.score < target) {
+      this.score++;
+      this.updateProgress(this.score);
+    } else if (this.score > target) {
+      this.score--;
+      this.updateProgress(this.score);
+    } else {
+      clearInterval(interval);
+    }
+  }, 10);
+}
+
+
+private updateProgress(score: number): void {
+  const percent = score / 100;
+  this.dashOffset = this.circumference * (1 - percent);
+}
+
+
 }

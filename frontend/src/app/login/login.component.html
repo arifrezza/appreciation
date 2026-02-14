@@ -58,9 +58,8 @@
 <!-- When user selects someone and clicks Next, above emits proceedWithEmployee; we open the editor below -->
 
 <!-- Appreciation Editor Modal: write appreciation text for the selected person -->
-<!-- MODIFY: Use [hidden] instead of *ngIf to keep overlay mounted and avoid flash on swap -->
 <app-appreciation-editor-modal
-  [hidden]="!showEditorModal"
+  *ngIf="showEditorModal"
   [employeeName]="selectedEmployeeName"
   (closed)="closeEditorModal()"
   (back)="goBackToSelection()"

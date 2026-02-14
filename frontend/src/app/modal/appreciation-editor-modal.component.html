@@ -3,25 +3,31 @@
 
     <!-- Header -->
     <div class="header">
-      <!-- MODIFY: Only the back arrow (←) is clickable, not the text -->
       <span>
         <span class="back-arrow" (click)="goBack()">←</span>
-        <span class="back-text"> You are now appreciating {{ employeeName }}</span>
+        <span class="back-text">
+          You are now appreciating {{ employeeName }}
+        </span>
       </span>
       <span class="close" (click)="close()">✕</span>
     </div>
 
     <div class="container">
 
-      <!-- Left panel -->
+      <!-- ================= LEFT PANEL ================= -->
       <div class="left">
+
         <textarea
+                #mainTextarea
                 class="main-text"
                 [(ngModel)]="userText"
                 (input)="onTextChange()"
+                autofocus
         ></textarea>
 
-        <div class="char-count">{{ userText.length }}</div>
+        <div class="char-count">
+          {{ userText.length }}
+        </div>
 
         <button
                 class="rewrite-btn"
@@ -31,14 +37,24 @@
           ✨ Rewrite with AI
         </button>
 
+        <!-- AI Suggestion -->
         <div class="ai-suggestion" *ngIf="showAiSuggestion">
           <div class="ai-label">✨ AI Generated Suggestion</div>
-          <textarea class="ai-text" [value]="aiText" readonly></textarea>
-          <!-- MODIFY: More descriptive button label -->
-          <button class="use-btn" (click)="useAiText()">Use Suggestion Text</button>
+          <textarea
+                  class="ai-text"
+                  [value]="aiText"
+                  readonly
+          ></textarea>
+
+          <button
+                  class="use-btn"
+                  (click)="useAiText()"
+          >
+            Use Suggestion Text
+          </button>
         </div>
 
-        <!-- POST button pinned at bottom center -->
+        <!-- POST button -->
         <div class="post-btn-wrapper">
           <button
                   class="submit-btn"
@@ -49,35 +65,73 @@
           </button>
         </div>
 
-
-
       </div>
+      <!-- ================= END LEFT ================= -->
 
-      <!-- Right panel -->
+
+      <!-- ================= RIGHT PANEL ================= -->
       <div class="right">
+
+        <!-- GUIDE TITLE -->
+        <div class="guide-title">
+          Your Recognition Guide
+        </div>
+
+        <!-- SCORE SECTION -->
         <div class="score-wrapper">
-          <div
-                  class="circle"
-                  [style.--score.%]="score"
-          >
-            <span>{{ score }}%</span>
-          </div>
 
+          <!-- Circle -->
+          <div class="circle-wrapper">
+
+            <svg
+                    class="progress-ring"
+                    width="80"
+                    height="80"
+            >
+              <!-- Background -->
+              <circle
+                      class="ring-bg"
+                      cx="40"
+                      cy="40"
+                      r="34">
+              </circle>
+
+              <!-- Progress -->
+              <circle
+                      class="ring-progress"
+                      cx="40"
+                      cy="40"
+                      r="34"
+                      [attr.stroke-dasharray]="circumference"
+                      [attr.stroke-dashoffset]="dashOffset"
+                      [ngClass]="[
+                  scoreClass,
+                  isCheckingLanguage ? 'checking' : ''
+                ]">
+              </circle>
+            </svg>
+
+            <!-- Inner Value -->
+            <div
+                    class="score-value"
+                    [class.thinking]="isCheckingLanguage"
+            >
+              {{ score }}%
+            </div>
+
+          </div>
+          <!-- END circle-wrapper -->
+
+          <!-- Score Message -->
           <div class="score-text">
-            <strong>This is top tier.</strong><br />
-            You’re capturing exactly what makes them a star.
+            TODO: AI Guide MSG
           </div>
+
         </div>
-
-        <div class="guide-title-wrapper">
-          <div class="guide-title">Your Recognition Guide</div>
-
-          <div class="checking-text" *ngIf="isCheckingLanguage">
-            Checking<span class="dots"></span>
-          </div>
-        </div>
+        <!-- END score-wrapper -->
 
 
+        <!-- GUIDE ITEMS -->
         <div
                 class="guide-item"
                 *ngFor="let item of guideItems"
@@ -85,12 +139,30 @@
         >
           <span>{{ item.label }}</span>
 
-          <span class="icon" *ngIf="item.status === 'success'">✓</span>
-          <span class="icon" *ngIf="item.status === 'error'">✕</span>
-          <span class="icon neutral-icon" *ngIf="item.status === 'neutral'">●</span>
+          <span
+                  class="icon"
+                  *ngIf="item.status === 'success'"
+          >
+            ✓
+          </span>
+
+          <span
+                  class="icon"
+                  *ngIf="item.status === 'error'"
+          >
+            ✕
+          </span>
+
+          <span
+                  class="icon neutral-icon"
+                  *ngIf="item.status === 'neutral'"
+          >
+            ●
+          </span>
         </div>
 
       </div>
+      <!-- ================= END RIGHT ================= -->
 
     </div>
   </div>
