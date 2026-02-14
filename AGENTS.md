@@ -78,3 +78,16 @@ Access at: http://localhost:9000
 - `POST /api/login` - Authentication (email/password → JWT token)
 - `GET /api/users/:currentUserId` - List all users except current
 - `POST /api/check-abusive-words` - Content moderation check
+- `POST /api/check-appreciation-quality` - AI quality scoring and coaching guidance
+
+## Environment Variables
+- `OPENAI_API_KEY` - Required for AI-powered quality checking (AppreciationQualityService)
+- `APPLICATION_SECRET` - Play framework secret key (optional, defaults to "changeme")
+
+## OpenAI Integration Pattern
+Services using OpenAI (e.g., `AppreciationQualityService`) follow this pattern:
+1. Inject `WSClient` for HTTP calls
+2. Read API key from environment: `sys.env.getOrElse("OPENAI_API_KEY", ...)`
+3. Build request with system prompt + user content
+4. Parse response, stripping markdown code fences if present
+5. Return `Either[String, Result]` for error handling

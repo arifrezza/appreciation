@@ -18,6 +18,9 @@ GET     /api/users/:currentUserId     controllers.UserController.getAllUsers(cur
 # Language API to check if the provided message contains Abusive Words
 POST   /api/check-abusive-words    controllers.AbusiveWordsController.checkAbusiveWords
 
+# Quality API to score appreciation and get AI coaching guidance
+POST   /api/check-appreciation-quality    controllers.AppreciationQualityController.checkQuality
+
 
 # Static assets from public directory
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
