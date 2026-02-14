@@ -203,8 +203,9 @@
 .score-wrapper {
   display: flex;
   gap: 14px;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 20px;
+  height: 200px;
 }
 
 /* ============================
@@ -335,6 +336,46 @@
 }
 
 
+/* AI GUIDANCE MESSAGE */
+.score-text {
+  flex: 1;
+  padding-left: 8px;
+}
+
+.guidance-label {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.guidance-label.question {
+  color: #0891b2; /* cyan */
+}
+
+.guidance-label.suggestion {
+  color: #7c3aed; /* purple */
+}
+
+.guidance-text {
+  font-size: 15px;
+  line-height: 1.5;
+  color: #374151;
+}
+
+::ng-deep .guidance-text .try-using {
+  font-style: italic;
+}
+
+::ng-deep .guidance-text .word-suggestions {
+  font-weight: 700 !important;
+  color: #0891b2 !important;
+}
+
+.guidance-text.neutral {
+  color: #9ca3af;
+  font-style: italic;
+}
+
 /* GUIDE SECTION */
 .guide-title {
   font-size: 15px;
@@ -357,6 +398,23 @@
   border: 1px solid #e5e7eb;
   font-size: 14px;
   margin-bottom: 10px;
+  transition: background-color 0.6s ease, border-color 0.6s ease, color 0.6s ease, transform 0.3s ease;
+}
+
+.guide-item:nth-child(2) {
+  transition-delay: 0.05s;
+}
+
+.guide-item:nth-child(3) {
+  transition-delay: 0.1s;
+}
+
+.guide-item:nth-child(4) {
+  transition-delay: 0.15s;
+}
+
+.guide-item:nth-child(5) {
+  transition-delay: 0.2s;
 }
 
 .guide-item.success {
@@ -387,6 +445,7 @@
   font-size: 13px;
   font-weight: 700;
   color: white;
+  transition: background-color 0.6s ease, opacity 0.5s ease, transform 0.3s ease;
 }
 
 .success .icon {

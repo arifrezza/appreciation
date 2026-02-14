@@ -122,9 +122,16 @@
           </div>
           <!-- END circle-wrapper -->
 
-          <!-- Score Message -->
-          <div class="score-text">
-            TODO: AI Guide MSG
+          <!-- AI Coaching Message -->
+          <div class="score-text" *ngIf="aiGuidance">
+            <div class="guidance-label" [ngClass]="guidanceType">
+              <span *ngIf="guidanceType === 'question'">💡 Quick tip:</span>
+              <span *ngIf="guidanceType === 'suggestion'">🎉 Congratulations!</span>
+            </div>
+          <div class="guidance-text" [innerHTML]="formatGuidance(aiGuidance)"></div>
+          </div>
+          <div class="score-text" *ngIf="!aiGuidance && score === 0">
+            <div class="guidance-text neutral">Start typing to get AI coaching...</div>
           </div>
 
         </div>
