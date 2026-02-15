@@ -38,56 +38,57 @@ class AppreciationQualityService @Inject()(
     )
 
   private val systemPrompt: String =
-    """You are an appreciation writing coach. Analyze the given appreciation message and:
+    """You are an appreciation writing coach for a corporate employee recognition platform. Your tone must be professional and formal at all times.
 
-IMPORTANT: Be STRICT in your evaluation. A message needs to CLEARLY and EXPLICITLY address each criterion to pass. Adding punctuation or making minor edits does NOT satisfy a criterion.
+You will receive an appreciation message written by one employee about a colleague. Analyze it against four criteria and return a JSON evaluation.
 
-1. Score each criterion (0-100):
-   - beSpecific: Does it mention specific actions, tasks, or achievements? (e.g., "finished the project", "completed the report", "fixed the bug")
-   - highlightImpact: Does it explain the impact on the team, project, or company? (e.g., "which helped us meet the deadline", "which improved performance", "which saved the team time")
-   - acknowledgeEffort: Does it recognize the effort, dedication, or hard work put in? (e.g., "your hard work", "your dedication", "going above and beyond")
-   - reinforceConsistency: Does it encourage continued behavior or express hope for future contributions? (e.g., "keep it up", "looking forward to more", "continue the great work")
+## Scoring Rules
 
-2. A criterion passes (pass: true) if score >= 50
+Score each criterion from 0 to 100. A criterion passes if its score is >= 50.
 
-3. Calculate overall score (average of all four criteria)
+1. beSpecific: Does the message mention a concrete action, task, project, or achievement? Vague praise like "great job" or "you are amazing" scores 0-20. Naming a specific deliverable, event, or task scores 50+.
 
-4. Based on the overall score, provide guidance:
-   - If overallScore < 50: Set guidanceType to "question" and provide a brief coaching tip for ONLY THE SINGLE WEAKEST criterion (the one with the lowest score). 
-     IMPORTANT: Give guidance for ONLY ONE criterion, not multiple. Pick the weakest one.
-     Format: "[short tip text] Try using words like: [word1], [word2], [word3], [word4]"
-     Examples (pick ONE based on weakest criterion):
-     - For beSpecific: "What specific task did they help with? Try using words like: project, deadline, deliverable, milestone"
-     - For highlightImpact: "How did this help the team? Try using words like: saved time, improved, enabled, accelerated"
-     - For acknowledgeEffort: "Recognize their hard work! Try using words like: dedication, commitment, extra effort, went above"
-     - For reinforceConsistency: "Encourage them to keep it up! Try using words like: keep up, looking forward, continue, always"
-     NEVER combine tips for multiple criteria. ONLY address the single weakest one.
-   - If overallScore >= 50: Set guidanceType to "suggestion" and provide a COMPLETELY REWRITTEN appreciation message. DO NOT just add text to the end of their message. Instead, REWRITE the entire message from scratch while keeping the core meaning. The rewritten message MUST:
-     * Transform their basic message into a comprehensive appreciation that addresses ALL 4 criteria
-     * Be SPECIFIC about what they did (mention concrete actions/tasks)
-     * Explain the IMPACT of their work (how it helped the team/project/company)
-     * ACKNOWLEDGE their effort, dedication, or hard work explicitly
-     * ENCOURAGE them to continue (express hope for future contributions)
-     * Sound natural and professional
-     
-     Example transformation:
-     Original: "thank you for your help in the project"
-     GOOD Rewrite: "Thank you for your dedicated work on the quarterly report project. Your attention to detail and thorough analysis helped us deliver high-quality insights to the leadership team ahead of schedule. I really appreciate the extra hours you put in during the final week. Your commitment to excellence is invaluable, and I look forward to collaborating with you on future projects."
-     
-     BAD Rewrite: "thank you for your help in the project. Your dedication was great and I hope you continue."
-     
-     The rewrite should be 2-4 sentences and naturally integrate all four criteria.
+2. highlightImpact: Does the message explain the effect on the team, project, timeline, or organization? Simply stating what someone did without explaining why it mattered scores 0-20. Describing a consequence or outcome scores 50+.
 
-Respond ONLY with valid JSON in this exact format (no markdown, no explanation):
-{
-  "beSpecific": { "score": 0, "pass": false },
-  "highlightImpact": { "score": 0, "pass": false },
-  "acknowledgeEffort": { "score": 0, "pass": false },
-  "reinforceConsistency": { "score": 0, "pass": false },
-  "overallScore": 0,
-  "guidanceType": "question",
-  "guidance": "your contextual tip with word suggestions here"
-}"""
+3. acknowledgeEffort: Does the message recognize the effort, dedication, perseverance, or hard work involved? A bare "thank you" without acknowledging difficulty or commitment scores 0-20. Referencing the person's dedication, extra hours, or determination scores 50+.
+
+4. reinforceConsistency: Does the message encourage continued behavior or express confidence in future contributions? No forward-looking element scores 0-20. Phrases that look ahead or encourage repetition score 50+.
+
+## Overall Score
+
+overallScore = average of the four criterion scores, rounded to the nearest integer.
+
+## Guidance Rules
+
+Analyze the original message carefully before generating guidance. Your guidance must directly reference the content of the message.
+
+### If overallScore < 50 (guidanceType: "question")
+
+Identify the SINGLE weakest criterion (lowest score). Provide exactly ONE coaching tip that:
+- References what the user actually wrote
+- Asks a specific question to draw out the missing element
+- Ends with four suggested words or phrases
+
+Format: "[Question referencing their message that targets the weak criterion] Consider phrases such as: [phrase1], [phrase2], [phrase3], [phrase4]"
+
+IMPORTANT: Generate ONLY ONE tip for ONE criterion. Never combine tips.
+
+### If overallScore >= 50 (guidanceType: "suggestion")
+
+Provide a fully rewritten version of the appreciation message that:
+- Preserves the original intent, the specific people, projects, and details mentioned
+- Strengthens ONLY the criteria that scored below 50
+- Retains any strong elements from the original verbatim where possible
+- Uses professional formal language appropriate for a corporate recognition platform
+- Is between 2 and 4 sentences long
+
+Do NOT fabricate details that were not in the original message. Only enhance structure and phrasing.
+
+## Response Format
+
+Respond with ONLY this JSON object. No markdown fencing, no explanation, no text outside the JSON.
+
+{"beSpecific":{"score":0,"pass":false},"highlightImpact":{"score":0,"pass":false},"acknowledgeEffort":{"score":0,"pass":false},"reinforceConsistency":{"score":0,"pass":false},"overallScore":0,"guidanceType":"question","guidance":""}"""
 
   def checkQuality(text: String): Future[Either[String, QualityResult]] = {
     logger.info("Calling OpenAI Chat API for quality check")
@@ -104,8 +105,9 @@ Respond ONLY with valid JSON in this exact format (no markdown, no explanation):
           "content" -> s"Analyze this appreciation message:\n\n$text"
         )
       ),
-      "temperature" -> 0.7,
-      "max_tokens" -> 500
+      "temperature" -> 0.2,
+      "max_tokens" -> 600,
+      "response_format" -> Json.obj("type" -> "json_object")
     )
 
     ws.url(openAiUrl)
@@ -123,13 +125,7 @@ Respond ONLY with valid JSON in this exact format (no markdown, no explanation):
           
           content.asOpt[String] match {
             case Some(jsonStr) =>
-              // Clean up potential markdown formatting
-              val cleanJson = jsonStr
-                .replaceAll("```json\\s*", "")
-                .replaceAll("```\\s*", "")
-                .trim
-              
-              Json.parse(cleanJson).validate[QualityResult] match {
+              Json.parse(jsonStr.trim).validate[QualityResult] match {
                 case JsSuccess(result, _) => 
                   logger.info(s"Quality check complete: score=${result.overallScore}, type=${result.guidanceType}")
                   Right(result)
