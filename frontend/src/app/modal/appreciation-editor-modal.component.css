@@ -198,6 +198,7 @@
   background: #ffffff;
   border-radius: 12px;
   padding: 20px;
+  overflow-y: auto;
 }
 
 .score-wrapper {
@@ -205,7 +206,7 @@
   gap: 14px;
   align-items: flex-start;
   margin-bottom: 20px;
-  height: 200px;
+  min-height: 200px;
 }
 
 /* ============================
@@ -360,6 +361,8 @@
   font-size: 15px;
   line-height: 1.5;
   color: #374151;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 ::ng-deep .guidance-text .try-using {
