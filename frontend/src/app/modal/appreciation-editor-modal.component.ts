@@ -258,7 +258,11 @@ postAppreciation(): void {
   useAiText(): void {
     this.userText = this.aiText;
     this.showAiSuggestion = false;
-    
+
+    // Trigger re-check so the remaining criteria get evaluated on the new text
+    this.isCheckingLanguage = true;
+    this.runChecksInParallel(this.userText.trim());
+
     // Focus on textarea after pasting
     setTimeout(() => {
       this.mainTextarea?.nativeElement?.focus();
