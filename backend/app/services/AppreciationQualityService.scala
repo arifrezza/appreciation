@@ -125,7 +125,13 @@ Respond with ONLY this JSON object. No markdown fencing, no explanation, no text
           
           content.asOpt[String] match {
             case Some(jsonStr) =>
-              Json.parse(jsonStr.trim).validate[QualityResult] match {
+              // Clean up potential markdown formatting
+              val cleanJson = jsonStr
+                .replaceAll("```json\\s*", "")
+                .replaceAll("```\\s*", "")
+                .trim
+              
+              Json.parse(cleanJson).validate[QualityResult] match {
                 case JsSuccess(result, _) => 
                   logger.info(s"Quality check complete: score=${result.overallScore}, type=${result.guidanceType}")
                   Right(result)
