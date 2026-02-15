@@ -92,6 +92,21 @@ The goal is that if the user adopts this suggestion, ALL 4 criteria would pass.
 
 Set guidanceType to "none" and guidance to an empty string. The frontend will handle the congratulation message.
 
+### If fewer than 3 criteria pass AND overallScore >= 50 (guidanceType: "suggestion")
+
+Same rules as above — provide a fully rewritten version.
+
+### If fewer than 3 criteria pass AND overallScore < 50 (guidanceType: "question")
+
+Identify the SINGLE weakest criterion (lowest score). Provide exactly ONE coaching tip that:
+- References what the user actually wrote
+- Asks a specific question to draw out the missing element
+- Ends with four suggested words or phrases
+
+Format: "[Question referencing their message that targets the weak criterion] Consider phrases such as: [phrase1], [phrase2], [phrase3], [phrase4]"
+
+IMPORTANT: Generate ONLY ONE tip for ONE criterion. Never combine tips.
+
 ## Response Format
 
 Respond with ONLY this JSON object. No markdown fencing, no explanation, no text outside the JSON.
