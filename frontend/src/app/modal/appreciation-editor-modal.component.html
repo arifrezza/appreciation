@@ -126,7 +126,8 @@
           <div class="score-text" *ngIf="aiGuidance">
             <div class="guidance-label" [ngClass]="guidanceType">
               <span *ngIf="guidanceType === 'question'">💡 Quick tip:</span>
-              <span *ngIf="guidanceType === 'suggestion'">🎉 Congratulations!</span>
+              <span *ngIf="guidanceType === 'suggestion' && !showAiSuggestion">🎉 Congratulations!</span>
+              <span *ngIf="guidanceType === 'suggestion' && showAiSuggestion">✨ Almost there!</span>
             </div>
           <div class="guidance-text" [innerHTML]="formatGuidance(aiGuidance)"></div>
           </div>

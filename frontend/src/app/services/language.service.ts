@@ -16,7 +16,7 @@ export interface QualityResponse {
     reinforceConsistency: CriterionResult;
   };
   overallScore: number;
-  guidanceType: 'question' | 'suggestion';
+  guidanceType: 'question' | 'suggestion' | 'none';
   guidance: string;
   message?: string;
 }
