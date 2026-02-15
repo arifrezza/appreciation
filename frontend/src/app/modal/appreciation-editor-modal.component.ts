@@ -167,17 +167,18 @@ export class AppreciationEditorModalComponent implements AfterViewInit {
           this.aiGuidance = this.getRandomCongratulation();
           this.guidanceType = 'suggestion'; // Show congratulations label
         } else if (qualityResult.guidanceType === 'suggestion') {
-          // Not perfect but good enough for a suggestion
+          // Not perfect - show actual pass/fail for each criterion
+          // Remaining checkmarks turn green only when user clicks "Use Suggestion Text"
           this.updateGuideItemsWithDelay([
-            { label: 'Be specific', pass: true },
-            { label: 'Highlight impact', pass: true },
-            { label: 'Acknowledge effort', pass: true },
-            { label: 'Reinforce consistency', pass: true }
+            { label: 'Be specific', pass: qualityResult.quality.beSpecific.pass },
+            { label: 'Highlight impact', pass: qualityResult.quality.highlightImpact.pass },
+            { label: 'Acknowledge effort', pass: qualityResult.quality.acknowledgeEffort.pass },
+            { label: 'Reinforce consistency', pass: qualityResult.quality.reinforceConsistency.pass }
           ]);
-          this.animateScore(100);
+          this.animateScore(qualityResult.overallScore);
           this.showAiSuggestion = true;
           this.aiText = qualityResult.guidance;
-          this.aiGuidance = this.getRandomCongratulation();
+          this.aiGuidance = qualityResult.guidance;
         } else {
           this.updateGuideItemsWithDelay([
             { label: 'Be specific', pass: qualityResult.quality.beSpecific.pass },
@@ -274,7 +275,18 @@ postAppreciation(): void {
   useAiText(): void {
     this.userText = this.aiText;
     this.showAiSuggestion = false;
-    
+
+    // Mark all guide items as success since AI suggestion covers all criteria
+    this.updateGuideItemsWithDelay([
+      { label: 'Be specific', pass: true },
+      { label: 'Highlight impact', pass: true },
+      { label: 'Acknowledge effort', pass: true },
+      { label: 'Reinforce consistency', pass: true }
+    ]);
+    this.animateScore(100);
+    this.aiGuidance = this.getRandomCongratulation();
+    this.guidanceType = 'suggestion';
+
     // Focus on textarea after pasting
     setTimeout(() => {
       this.mainTextarea?.nativeElement?.focus();
