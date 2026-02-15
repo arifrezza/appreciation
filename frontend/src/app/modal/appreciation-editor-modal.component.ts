@@ -358,19 +358,19 @@ private updateProgress(score: number): void {
 }
 
 /**
- * Format guidance text: make words after "Try using words like:" bold and cyan
+ * Format guidance text: make words after "Consider phrases such as:" bold and cyan
  */
 formatGuidance(text: string): string {
   if (!text) return '';
-  
-  const marker = 'Try using words like:';
+
+  const marker = 'Consider phrases such as:';
   const index = text.indexOf(marker);
-  
+
   if (index === -1) return text;
-  
+
   const before = text.substring(0, index);
   const after = text.substring(index + marker.length);
-  
+
   return `${before}<br><br><span class="try-using">${marker}</span><span class="word-suggestions">${after}</span>`;
 }
 
