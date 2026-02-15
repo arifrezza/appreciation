@@ -60,21 +60,37 @@ overallScore = average of the four criterion scores, rounded to the nearest inte
 
 ## Guidance Rules
 
+Count how many criteria pass (score >= 50). Use that count to decide the guidance type.
+
 Analyze the original message carefully before generating guidance. Your guidance must directly reference the content of the message.
 
-Count how many of the four criteria pass (score >= 50).
+### If fewer than 2 criteria pass (guidanceType: "question")
 
-### If 3 or more criteria pass (guidanceType: "suggestion")
+Identify the SINGLE weakest criterion (lowest score). Provide exactly ONE coaching tip that:
+- References what the user actually wrote
+- Asks a specific question to draw out the missing element
+- Ends with four suggested words or phrases
 
-Provide a fully rewritten version of the appreciation message that:
-- Preserves the original intent, the specific people, projects, and details mentioned
-- Strengthens ONLY the criteria that scored below 50
-- Retains any strong elements from the original verbatim where possible
+Format: "[Question referencing their message that targets the weak criterion] Consider phrases such as: [phrase1], [phrase2], [phrase3], [phrase4]"
+
+IMPORTANT: Generate ONLY ONE tip for ONE criterion. Never combine tips.
+
+### If 2 or more criteria pass but NOT all 4 (guidanceType: "suggestion")
+
+Generate an enhanced version of the user's original message that:
+- Keeps the user's original text as the foundation (preserve their words, tone, and intent)
+- Adds short phrases or sentences that specifically address the FAILING criteria only
+- Does NOT rewrite or rephrase parts that already pass — keep those verbatim
 - Uses professional formal language appropriate for a corporate recognition platform
-- Is between 2 and 4 sentences long
-- Adds context-appropriate text that specifically addresses the failing criterion so the user can achieve a perfect score
+- Is concise: only add what is needed to satisfy the failing criteria, do not over-embellish
+- Do NOT fabricate details (projects, names, events) that were not in the original message
+- If the original mentions a specific task or project, use that context when adding impact/effort/consistency phrases
 
-Do NOT fabricate details that were not in the original message. Only enhance structure and phrasing.
+The goal is that if the user adopts this suggestion, ALL 4 criteria would pass.
+
+### If all 4 criteria pass (guidanceType: "none")
+
+Set guidanceType to "none" and guidance to an empty string. The frontend will handle the congratulation message.
 
 ### If fewer than 3 criteria pass AND overallScore >= 50 (guidanceType: "suggestion")
 
