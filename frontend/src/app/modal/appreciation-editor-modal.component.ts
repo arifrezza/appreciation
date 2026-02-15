@@ -36,7 +36,7 @@ export class AppreciationEditorModalComponent implements AfterViewInit {
 
   // 🤖 AI Coaching
   aiGuidance: string = '';
-  guidanceType: 'question' | 'suggestion' | '' = '';
+  guidanceType: 'question' | 'suggestion' | 'none' | '' = '';
 
   radius = 34;
   circumference = 2 * Math.PI * this.radius;
@@ -147,21 +147,16 @@ export class AppreciationEditorModalComponent implements AfterViewInit {
         this.guidanceType = qualityResult.guidanceType;
         this.aiGuidance = qualityResult.guidance;
 
-        // Check if all criteria already pass (score is 100)
-        const allCriteriaPassed = 
-          qualityResult.quality.beSpecific.pass &&
-          qualityResult.quality.highlightImpact.pass &&
-          qualityResult.quality.acknowledgeEffort.pass &&
-          qualityResult.quality.reinforceConsistency.pass;
+        // Always show actual criterion pass/fail states
+        this.updateGuideItemsWithDelay([
+          { label: 'Be specific', pass: qualityResult.quality.beSpecific.pass },
+          { label: 'Highlight impact', pass: qualityResult.quality.highlightImpact.pass },
+          { label: 'Acknowledge effort', pass: qualityResult.quality.acknowledgeEffort.pass },
+          { label: 'Reinforce consistency', pass: qualityResult.quality.reinforceConsistency.pass }
+        ]);
 
-        if (allCriteriaPassed) {
-          // Already perfect - just update UI, no suggestion needed
-          this.updateGuideItemsWithDelay([
-            { label: 'Be specific', pass: true },
-            { label: 'Highlight impact', pass: true },
-            { label: 'Acknowledge effort', pass: true },
-            { label: 'Reinforce consistency', pass: true }
-          ]);
+        if (qualityResult.guidanceType === 'none') {
+          // All 4 criteria pass - show congratulation
           this.animateScore(qualityResult.overallScore);
           this.showAiSuggestion = false;
           this.aiGuidance = this.getRandomCongratulation();
@@ -180,12 +175,7 @@ export class AppreciationEditorModalComponent implements AfterViewInit {
           this.aiText = qualityResult.guidance;
           this.aiGuidance = qualityResult.guidance;
         } else {
-          this.updateGuideItemsWithDelay([
-            { label: 'Be specific', pass: qualityResult.quality.beSpecific.pass },
-            { label: 'Highlight impact', pass: qualityResult.quality.highlightImpact.pass },
-            { label: 'Acknowledge effort', pass: qualityResult.quality.acknowledgeEffort.pass },
-            { label: 'Reinforce consistency', pass: qualityResult.quality.reinforceConsistency.pass }
-          ]);
+          // 0-1 criteria pass - show coaching tip
           this.animateScore(qualityResult.overallScore);
           this.showAiSuggestion = false;
         }
@@ -396,6 +386,19 @@ private getRandomCongratulation(): string {
     'Well written message!',
     'Your recognition is spot on!',
     'Excellent appreciation!'
+  ];
+  return messages[Math.floor(Math.random() * messages.length)];
+}
+
+/**
+ * Get a random encouragement message for when suggestion is available
+ */
+private getRandomEncouragement(): string {
+  const messages = [
+    'Good progress! Use the suggestion below to strengthen your message.',
+    'You are on the right track! Try the enhanced version below.',
+    'Almost there! The suggestion below covers all criteria.',
+    'Nice work so far! See the improved version below.'
   ];
   return messages[Math.floor(Math.random() * messages.length)];
 }
