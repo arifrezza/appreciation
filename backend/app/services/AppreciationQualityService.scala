@@ -62,7 +62,25 @@ overallScore = average of the four criterion scores, rounded to the nearest inte
 
 Analyze the original message carefully before generating guidance. Your guidance must directly reference the content of the message.
 
-### If overallScore < 50 (guidanceType: "question")
+Count how many of the four criteria pass (score >= 50).
+
+### If 3 or more criteria pass (guidanceType: "suggestion")
+
+Provide a fully rewritten version of the appreciation message that:
+- Preserves the original intent, the specific people, projects, and details mentioned
+- Strengthens ONLY the criteria that scored below 50
+- Retains any strong elements from the original verbatim where possible
+- Uses professional formal language appropriate for a corporate recognition platform
+- Is between 2 and 4 sentences long
+- Adds context-appropriate text that specifically addresses the failing criterion so the user can achieve a perfect score
+
+Do NOT fabricate details that were not in the original message. Only enhance structure and phrasing.
+
+### If fewer than 3 criteria pass AND overallScore >= 50 (guidanceType: "suggestion")
+
+Same rules as above — provide a fully rewritten version.
+
+### If fewer than 3 criteria pass AND overallScore < 50 (guidanceType: "question")
 
 Identify the SINGLE weakest criterion (lowest score). Provide exactly ONE coaching tip that:
 - References what the user actually wrote
@@ -72,17 +90,6 @@ Identify the SINGLE weakest criterion (lowest score). Provide exactly ONE coachi
 Format: "[Question referencing their message that targets the weak criterion] Consider phrases such as: [phrase1], [phrase2], [phrase3], [phrase4]"
 
 IMPORTANT: Generate ONLY ONE tip for ONE criterion. Never combine tips.
-
-### If overallScore >= 50 (guidanceType: "suggestion")
-
-Provide a fully rewritten version of the appreciation message that:
-- Preserves the original intent, the specific people, projects, and details mentioned
-- Strengthens ONLY the criteria that scored below 50
-- Retains any strong elements from the original verbatim where possible
-- Uses professional formal language appropriate for a corporate recognition platform
-- Is between 2 and 4 sentences long
-
-Do NOT fabricate details that were not in the original message. Only enhance structure and phrasing.
 
 ## Response Format
 

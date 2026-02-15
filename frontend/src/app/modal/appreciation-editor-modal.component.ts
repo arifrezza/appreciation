@@ -148,11 +148,19 @@ export class AppreciationEditorModalComponent implements AfterViewInit {
         this.aiGuidance = qualityResult.guidance;
 
         // Check if all criteria already pass (score is 100)
-        const allCriteriaPassed = 
+        const allCriteriaPassed =
           qualityResult.quality.beSpecific.pass &&
           qualityResult.quality.highlightImpact.pass &&
           qualityResult.quality.acknowledgeEffort.pass &&
           qualityResult.quality.reinforceConsistency.pass;
+
+        // Count how many criteria pass
+        const passingCount = [
+          qualityResult.quality.beSpecific.pass,
+          qualityResult.quality.highlightImpact.pass,
+          qualityResult.quality.acknowledgeEffort.pass,
+          qualityResult.quality.reinforceConsistency.pass
+        ].filter(Boolean).length;
 
         if (allCriteriaPassed) {
           // Already perfect - just update UI, no suggestion needed
@@ -166,9 +174,9 @@ export class AppreciationEditorModalComponent implements AfterViewInit {
           this.showAiSuggestion = false;
           this.aiGuidance = this.getRandomCongratulation();
           this.guidanceType = 'suggestion'; // Show congratulations label
-        } else if (qualityResult.guidanceType === 'suggestion') {
-          // Not perfect - show actual pass/fail for each criterion
-          // Remaining checkmarks turn green only when user clicks "Use Suggestion Text"
+        } else if (passingCount >= 3 || qualityResult.guidanceType === 'suggestion') {
+          // 3+ criteria pass OR backend returned suggestion — show AI suggestion
+          // so user can click "Use Suggestion Text" to improve remaining criteria
           this.updateGuideItemsWithDelay([
             { label: 'Be specific', pass: qualityResult.quality.beSpecific.pass },
             { label: 'Highlight impact', pass: qualityResult.quality.highlightImpact.pass },
@@ -179,6 +187,7 @@ export class AppreciationEditorModalComponent implements AfterViewInit {
           this.showAiSuggestion = true;
           this.aiText = qualityResult.guidance;
           this.aiGuidance = qualityResult.guidance;
+          this.guidanceType = 'suggestion';
         } else {
           this.updateGuideItemsWithDelay([
             { label: 'Be specific', pass: qualityResult.quality.beSpecific.pass },
@@ -275,22 +284,43 @@ postAppreciation(): void {
   useAiText(): void {
     this.userText = this.aiText;
     this.showAiSuggestion = false;
-
-    // Mark all guide items as success since AI suggestion covers all criteria
-    this.updateGuideItemsWithDelay([
-      { label: 'Be specific', pass: true },
-      { label: 'Highlight impact', pass: true },
-      { label: 'Acknowledge effort', pass: true },
-      { label: 'Reinforce consistency', pass: true }
-    ]);
-    this.animateScore(100);
-    this.aiGuidance = this.getRandomCongratulation();
-    this.guidanceType = 'suggestion';
+    this.isCheckingLanguage = true;
 
     // Focus on textarea after pasting
     setTimeout(() => {
       this.mainTextarea?.nativeElement?.focus();
     }, 100);
+
+    // Re-run quality check on the AI suggestion text to show genuine score improvement
+    this.languageService.checkQuality(this.userText.trim()).subscribe({
+      next: (res: QualityResponse) => {
+        this.isCheckingLanguage = false;
+        if (res.success) {
+          this.updateGuideItemsWithDelay([
+            { label: 'Be specific', pass: res.quality.beSpecific.pass },
+            { label: 'Highlight impact', pass: res.quality.highlightImpact.pass },
+            { label: 'Acknowledge effort', pass: res.quality.acknowledgeEffort.pass },
+            { label: 'Reinforce consistency', pass: res.quality.reinforceConsistency.pass }
+          ]);
+          this.animateScore(res.overallScore);
+          this.aiGuidance = this.getRandomCongratulation();
+          this.guidanceType = 'suggestion';
+        }
+      },
+      error: () => {
+        // Fallback: assume AI suggestion covers all criteria
+        this.isCheckingLanguage = false;
+        this.updateGuideItemsWithDelay([
+          { label: 'Be specific', pass: true },
+          { label: 'Highlight impact', pass: true },
+          { label: 'Acknowledge effort', pass: true },
+          { label: 'Reinforce consistency', pass: true }
+        ]);
+        this.animateScore(100);
+        this.aiGuidance = this.getRandomCongratulation();
+        this.guidanceType = 'suggestion';
+      }
+    });
   }
 
   /**
