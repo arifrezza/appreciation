@@ -197,7 +197,7 @@
   width: 340px;
   background: #ffffff;
   border-radius: 12px;
-  padding: 0;
+  padding: 14px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -226,6 +226,7 @@
 .score-top-left {
   flex-shrink: 0;
   padding: 8px;
+  margin-left: 10px;
 }
 
 .score-top-right {
