@@ -116,6 +116,14 @@ export class AppreciationEditorModalComponent
      GUIDE ITEMS
   ====================== */
 
+  private readonly weightageMap: Record<string, number> = {
+    'Abusive Check': 10,
+    'Be specific': 35,
+    'Highlight impact': 30,
+    'Acknowledge effort': 15,
+    'Reinforce consistency': 10
+  };
+
   guideItems = [
     { label: 'Abusive Check', status: 'neutral' as RuleStatus },
     { label: 'Be specific', status: 'neutral' as RuleStatus },
@@ -186,18 +194,18 @@ const normalized = this.normalizeText(text);
       { label: 'Highlight impact', pass: qualityResult.quality.highlightImpact.pass },
       { label: 'Acknowledge effort', pass: qualityResult.quality.acknowledgeEffort.pass },
       { label: 'Reinforce consistency', pass: qualityResult.quality.reinforceConsistency.pass }
-    ]);
+    ], () => {
+      this.animateScore(this.calculateWeightedScore());
+    });
 
     if (qualityResult.guidanceType === 'none') {
 
-      this.animateScore(qualityResult.overallScore);
       this.showAiSuggestion = false;
       this.aiGuidance = this.getRandomCongratulation();
       this.guidanceType = 'suggestion';
 
     } else if (qualityResult.guidanceType === 'suggestion') {
 
-      this.animateScore(qualityResult.overallScore);
       this.showAiSuggestion = true;
       this.aiText = qualityResult.guidance;
       this.aiGuidance = qualityResult.guidance;
@@ -205,7 +213,6 @@ const normalized = this.normalizeText(text);
 
     } else {
 
-      this.animateScore(qualityResult.overallScore);
       this.showAiSuggestion = false;
     }
   }
@@ -220,10 +227,17 @@ const normalized = this.normalizeText(text);
   }
 
   private updateGuideItemsWithDelay(
-    updates: Array<{ label: string, pass: boolean }>
+    updates: Array<{ label: string, pass: boolean }>,
+    onComplete?: () => void
   ): void {
     updates.forEach((u, i) => {
-      setTimeout(() => this.updateGuideItem(u.label, u.pass), i * 100);
+      setTimeout(() => {
+        this.updateGuideItem(u.label, u.pass);
+        // After the last item updates, call onComplete
+        if (i === updates.length - 1 && onComplete) {
+          onComplete();
+        }
+      }, i * 100);
     });
   }
 
@@ -267,9 +281,10 @@ const normalized = this.normalizeText(text);
           { label: 'Highlight impact', pass: res.quality.highlightImpact.pass },
           { label: 'Acknowledge effort', pass: res.quality.acknowledgeEffort.pass },
           { label: 'Reinforce consistency', pass: res.quality.reinforceConsistency.pass }
-        ]);
+        ], () => {
+          this.animateScore(this.calculateWeightedScore());
+        });
 
-        this.animateScore(res.overallScore);
         this.aiGuidance = this.getRandomCongratulation();
         this.guidanceType = 'suggestion';
       },
@@ -342,6 +357,15 @@ const normalized = this.normalizeText(text);
     if (this.score < 40) return 'low';
     if (this.score < 70) return 'medium';
     return 'high';
+  }
+
+  private calculateWeightedScore(): number {
+    return this.guideItems.reduce((total, item) => {
+      if (item.status === 'success') {
+        return total + (this.weightageMap[item.label] || 0);
+      }
+      return total;
+    }, 0);
   }
 
   private animateScore(target: number): void {
