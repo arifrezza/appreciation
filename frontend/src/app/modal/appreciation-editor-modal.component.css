@@ -203,10 +203,31 @@
 
 .score-wrapper {
   display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.score-top {
+  display: flex;
   gap: 14px;
   align-items: flex-start;
-  margin-bottom: 20px;
-  min-height: 200px;
+}
+
+.score-top-left {
+  flex-shrink: 0;
+}
+
+.score-top-right {
+  flex: 1;
+  min-width: 0;
+}
+
+.score-bottom {
+  padding: 12px 14px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 10px;
 }
 
 /* ============================
@@ -365,13 +386,15 @@
   overflow-wrap: break-word;
 }
 
-::ng-deep .guidance-text .try-using {
+.score-bottom .try-using {
   font-style: italic;
+  display: block;
+  margin-bottom: 4px;
 }
 
-::ng-deep .guidance-text .word-suggestions {
-  font-weight: 700 !important;
-  color: #0891b2 !important;
+.score-bottom .word-suggestions {
+  font-weight: 700;
+  color: #0891b2;
 }
 
 .guidance-text.neutral {

@@ -80,69 +80,83 @@
         <!-- SCORE SECTION -->
         <div class="score-wrapper">
 
-          <!-- Circle -->
-          <div class="circle-wrapper">
+          <!-- TOP: Circle (left) + Guidance (right) -->
+          <div class="score-top">
 
-            <svg
-                    class="progress-ring"
-                    width="80"
-                    height="80"
-            >
-              <!-- Background -->
-              <circle
-                      class="ring-bg"
-                      cx="40"
-                      cy="40"
-                      r="34">
-              </circle>
+            <!-- Left: Circular Progress -->
+            <div class="score-top-left">
+              <div class="circle-wrapper">
 
-              <!-- Progress -->
-              <circle
-                      class="ring-progress"
-                      cx="40"
-                      cy="40"
-                      r="34"
-                      [attr.stroke-dasharray]="circumference"
-                      [attr.stroke-dashoffset]="dashOffset"
-                      [ngClass]="[
-                  scoreClass,
-                  isCheckingLanguage ? 'checking' : ''
-                ]">
-              </circle>
-            </svg>
+                <svg
+                        class="progress-ring"
+                        width="80"
+                        height="80"
+                >
+                  <!-- Background -->
+                  <circle
+                          class="ring-bg"
+                          cx="40"
+                          cy="40"
+                          r="34">
+                  </circle>
 
-            <!-- Inner Value -->
-            <div
-                    class="score-value"
-                    [class.thinking]="isCheckingLanguage"
-            >
-              {{ score }}%
+                  <!-- Progress -->
+                  <circle
+                          class="ring-progress"
+                          cx="40"
+                          cy="40"
+                          r="34"
+                          [attr.stroke-dasharray]="circumference"
+                          [attr.stroke-dashoffset]="dashOffset"
+                          [ngClass]="[
+                      scoreClass,
+                      isCheckingLanguage ? 'checking' : ''
+                    ]">
+                  </circle>
+                </svg>
+
+                <!-- Inner Value -->
+                <div
+                        class="score-value"
+                        [class.thinking]="isCheckingLanguage"
+                >
+                  {{ score }}%
+                </div>
+
+              </div>
             </div>
 
-          </div>
-          <!-- END circle-wrapper -->
-
-          <!-- AI Coaching Message -->
-          <div class="score-text" *ngIf="aiGuidance">
-            <div class="guidance-label" [ngClass]="guidanceType">
-              <span *ngIf="guidanceType === 'question'">💡 Quick tip:</span>
-              <span *ngIf="guidanceType === 'suggestion' && !showAiSuggestion">🎉 Congratulations!</span>
-              <span *ngIf="guidanceType === 'suggestion' && showAiSuggestion">✨ Almost there!</span>
-            </div>
-            <div class="guidance-text">
-                <span *ngIf="showAiSuggestion">
+            <!-- Right: AI Coaching Message -->
+            <div class="score-top-right">
+              <div class="score-text" *ngIf="aiGuidance">
+                <div class="guidance-label" [ngClass]="guidanceType">
+                  <span *ngIf="guidanceType === 'question'">💡 Quick tip:</span>
+                  <span *ngIf="guidanceType === 'suggestion' && !showAiSuggestion">🎉 Congratulations!</span>
+                  <span *ngIf="guidanceType === 'suggestion' && showAiSuggestion">✨ Almost there!</span>
+                </div>
+                <div class="guidance-text">
+                  <span *ngIf="showAiSuggestion">
                     Suggestions ready — check the left panel ✨
-                </span>
-
-                <span *ngIf="!showAiSuggestion"
-                    [innerHTML]="formatGuidance(aiGuidance)">
-                </span>
-
+                  </span>
+                  <span *ngIf="!showAiSuggestion"
+                        [innerHTML]="getGuidanceMainText(aiGuidance)">
+                  </span>
+                </div>
+              </div>
+              <div class="score-text" *ngIf="!aiGuidance && score === 0">
+                <div class="guidance-text neutral">Start typing to get AI guidance....</div>
+              </div>
             </div>
 
           </div>
-          <div class="score-text" *ngIf="!aiGuidance && score === 0">
-            <div class="guidance-text neutral">Start typing to get AI guidance....</div>
+          <!-- END score-top -->
+
+          <!-- BOTTOM: "Consider phrases such as:" -->
+          <div class="score-bottom" *ngIf="getGuidancePhrases(aiGuidance)">
+            <div class="guidance-text">
+              <span class="try-using">Consider phrases such as:</span>
+              <span class="word-suggestions">{{ getGuidancePhrases(aiGuidance) }}</span>
+            </div>
           </div>
 
         </div>

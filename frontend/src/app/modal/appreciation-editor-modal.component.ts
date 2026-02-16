@@ -380,6 +380,28 @@ const normalized = this.normalizeText(text);
       <span class="word-suggestions">${after}</span>`;
   }
 
+  getGuidanceMainText(text: string): string {
+    if (!text) return '';
+
+    const marker = 'Consider phrases such as:';
+    const index = text.indexOf(marker);
+
+    if (index === -1) return text;
+
+    return text.substring(0, index).trim();
+  }
+
+  getGuidancePhrases(text: string): string {
+    if (!text) return '';
+
+    const marker = 'Consider phrases such as:';
+    const index = text.indexOf(marker);
+
+    if (index === -1) return '';
+
+    return text.substring(index + marker.length).trim();
+  }
+
 private getRandomCongratulation(): string {
   const messages = [
     'Your message is perfect!',
