@@ -1,9 +1,18 @@
-import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
-import { LanguageService, QualityResponse } from '../services/language.service';
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  ViewChild,
+  ElementRef,
+  AfterViewInit,
+  OnDestroy
+} from '@angular/core';
 
-/**
- * Rule status types
- */
+import { LanguageService, QualityResponse } from '../services/language.service';
+import { Subject, forkJoin } from 'rxjs';
+import { debounceTime, filter, switchMap, takeUntil } from 'rxjs/operators';
+
 type RuleStatus = 'neutral' | 'success' | 'error';
 
 @Component({
@@ -11,316 +20,304 @@ type RuleStatus = 'neutral' | 'success' | 'error';
   templateUrl: './appreciation-editor-modal.component.html',
   styleUrls: ['./appreciation-editor-modal.component.css']
 })
-export class AppreciationEditorModalComponent implements AfterViewInit {
+export class AppreciationEditorModalComponent
+  implements AfterViewInit, OnDestroy {
 
-    @ViewChild('mainTextarea') mainTextarea!: ElementRef<HTMLTextAreaElement>;
+  @ViewChild('mainTextarea') mainTextarea!: ElementRef<HTMLTextAreaElement>;
 
-    constructor(private languageService: LanguageService) {}
+  constructor(private languageService: LanguageService) {}
 
-    ngAfterViewInit(): void {
-      setTimeout(() => {
-        this.mainTextarea?.nativeElement?.focus();
-      }, 300);
-    }
+  /* =====================
+     LIFECYCLE
+  ====================== */
+
+  ngAfterViewInit(): void {
+
+    // focus textarea
+    setTimeout(() => {
+      this.mainTextarea?.nativeElement?.focus();
+    }, 300);
+
+    // ⭐ Reactive typing stream
+    this.typingSubject
+      .pipe(
+        debounceTime(this.TYPING_DELAY),
+        filter(text => text.length >= 2),
+
+        switchMap(text => {
+
+          // avoid flicker
+          if (!this.isCheckingLanguage) {
+            this.isCheckingLanguage = true;
+          }
+
+          return forkJoin({
+            language: this.languageService.checkLanguage(text),
+            quality: this.languageService.checkQuality(text)
+          });
+        }),
+
+        takeUntil(this.destroy$)
+      )
+      .subscribe({
+        next: ({ language, quality }) => {
+          this.isCheckingLanguage = false;
+          this.handleCombinedResults(language, quality);
+        },
+        error: () => {
+          this.isCheckingLanguage = false;
+        }
+      });
+  }
+
+  ngOnDestroy(): void {
+      console.log("DESTROY CALLED"); // 👈 add this
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  /* =====================
+     INPUT / OUTPUT
+  ====================== */
+
   @Input() employeeName!: string;
   @Output() closed = new EventEmitter<void>();
   @Output() back = new EventEmitter<void>();
 
-  userText: string = '';
-  aiText: string = '';
-  showAiSuggestion: boolean = false;
+  /* =====================
+     STATE
+  ====================== */
 
-  // 🔥 Circular score (starts at 0)
-  score: number = 0;
-  isCheckingLanguage: boolean = false;
+  userText = '';
+  aiText = '';
+  showAiSuggestion = false;
 
-  // 🤖 AI Coaching
-  aiGuidance: string = '';
+  score = 0;
+  isCheckingLanguage = false;
+
+  aiGuidance = '';
   guidanceType: 'question' | 'suggestion' | 'none' | '' = '';
 
   radius = 34;
   circumference = 2 * Math.PI * this.radius;
   dashOffset = this.circumference;
 
-
-
-  // 🔒 Internal flags
   private hasStartedTyping = false;
-  private typingTimer: any = null;
-  private readonly TYPING_DELAY = 800; // 800ms for faster response
-  private lastGeneratedFor: string = '';
+  private readonly TYPING_DELAY = 1000;
+  private lastGeneratedFor = '';
+  private lastMeaningfulText = '';
 
 
-  /**
-   * Right-side guide items
-   */
+  // ⭐ reactive streams
+  private typingSubject = new Subject<string>();
+  private destroy$ = new Subject<void>();
+
+  /* =====================
+     GUIDE ITEMS
+  ====================== */
+
   guideItems = [
-    { label: 'Language Check', status: 'neutral' as RuleStatus },
+    { label: 'Abusive Check', status: 'neutral' as RuleStatus },
     { label: 'Be specific', status: 'neutral' as RuleStatus },
     { label: 'Highlight impact', status: 'neutral' as RuleStatus },
     { label: 'Acknowledge effort', status: 'neutral' as RuleStatus },
     { label: 'Reinforce consistency', status: 'neutral' as RuleStatus }
   ];
 
-  /**
-   * Triggered on every keystroke
-   */
+  /* =====================
+     TEXT CHANGE
+  ====================== */
+
   onTextChange(): void {
+
     const text = this.userText.trim();
 
-    // 🔴 Case 1: All text removed
     if (text.length === 0) {
       this.resetToInitialState();
       return;
     }
 
-    // Track that typing has started
     if (!this.hasStartedTyping) {
       this.hasStartedTyping = true;
     }
 
-    // 🔁 ALWAYS clear previous timer
-    if (this.typingTimer !== null) {
-      clearTimeout(this.typingTimer);
-      this.typingTimer = null;
-    }
+const normalized = this.normalizeText(text);
 
-    // ⏱ ALWAYS schedule a fresh check
-    this.typingTimer = setTimeout(() => {
-      this.isCheckingLanguage = true; // 🔴 START CHECKING
-      this.runChecksInParallel(this.userText.trim());
-    }, this.TYPING_DELAY);
-
-
-    // AI suggestion is now controlled by quality check (score >= 70%)
-    // No longer based on character count
+  if (normalized === this.lastMeaningfulText) {
+    return; // ❌ skip AI call
   }
 
+  this.lastMeaningfulText = normalized;
 
-  /**
-   * Run language check and quality check in PARALLEL for faster response
-   */
-  private runChecksInParallel(text: string): void {
+    // ⭐ push to reactive stream
+    this.typingSubject.next(text);
+  }
+
+  /* =====================
+     RESULT PROCESSING
+  ====================== */
+
+  private handleCombinedResults(
+    language: any,
+    qualityResult: QualityResponse
+  ): void {
+
     const languageRule = this.guideItems.find(
-      item => item.label === 'Language Check'
+      item => item.label === 'Abusive Check'
     );
 
     if (!languageRule) return;
 
-    languageRule.status = 'neutral';
+    // abusive check
+    if (language.abusive) {
+      languageRule.status = 'error';
+      return;
+    }
 
-    let abusiveResult: boolean | null = null;
-    let qualityResult: QualityResponse | null = null;
-    let languageCheckDone = false;
-    let qualityCheckDone = false;
+    languageRule.status = 'success';
 
-    // Helper to process results when both are ready
-    const processResults = () => {
-      if (!languageCheckDone) return;
+    if (!qualityResult || !qualityResult.success) return;
 
-      // If abusive, ignore quality results and show error
-      if (abusiveResult) {
-        languageRule.status = 'error';
-        this.isCheckingLanguage = false;
-        return;
-      }
+    this.guidanceType = qualityResult.guidanceType;
+    this.aiGuidance = qualityResult.guidance;
 
-      // Language is clean
-      languageRule.status = 'success';
+    this.updateGuideItemsWithDelay([
+      { label: 'Be specific', pass: qualityResult.quality.beSpecific.pass },
+      { label: 'Highlight impact', pass: qualityResult.quality.highlightImpact.pass },
+      { label: 'Acknowledge effort', pass: qualityResult.quality.acknowledgeEffort.pass },
+      { label: 'Reinforce consistency', pass: qualityResult.quality.reinforceConsistency.pass }
+    ]);
 
-      // Wait for quality check if not done yet
-      if (!qualityCheckDone) return;
+    if (qualityResult.guidanceType === 'none') {
 
-      this.isCheckingLanguage = false;
+      this.animateScore(qualityResult.overallScore);
+      this.showAiSuggestion = false;
+      this.aiGuidance = this.getRandomCongratulation();
+      this.guidanceType = 'suggestion';
 
-      if (qualityResult && qualityResult.success) {
-        this.guidanceType = qualityResult.guidanceType;
-        this.aiGuidance = qualityResult.guidance;
+    } else if (qualityResult.guidanceType === 'suggestion') {
 
-        // Always show actual criterion pass/fail states
-        this.updateGuideItemsWithDelay([
-          { label: 'Be specific', pass: qualityResult.quality.beSpecific.pass },
-          { label: 'Highlight impact', pass: qualityResult.quality.highlightImpact.pass },
-          { label: 'Acknowledge effort', pass: qualityResult.quality.acknowledgeEffort.pass },
-          { label: 'Reinforce consistency', pass: qualityResult.quality.reinforceConsistency.pass }
-        ]);
+      this.animateScore(qualityResult.overallScore);
+      this.showAiSuggestion = true;
+      this.aiText = qualityResult.guidance;
+      this.aiGuidance = qualityResult.guidance;
+      this.guidanceType = 'suggestion';
 
-        if (qualityResult.guidanceType === 'none') {
-          // All 4 criteria pass - show congratulation
-          this.animateScore(qualityResult.overallScore);
-          this.showAiSuggestion = false;
-          this.aiGuidance = this.getRandomCongratulation();
-          this.guidanceType = 'suggestion'; // Show congratulations label
-        } else if (qualityResult.guidanceType === 'suggestion') {
-          // 3+ criteria pass OR backend returned suggestion — show AI suggestion
-          // so user can click "Use Suggestion Text" to improve remaining criteria
-          this.updateGuideItemsWithDelay([
-            { label: 'Be specific', pass: qualityResult.quality.beSpecific.pass },
-            { label: 'Highlight impact', pass: qualityResult.quality.highlightImpact.pass },
-            { label: 'Acknowledge effort', pass: qualityResult.quality.acknowledgeEffort.pass },
-            { label: 'Reinforce consistency', pass: qualityResult.quality.reinforceConsistency.pass }
-          ]);
-          this.animateScore(qualityResult.overallScore);
-          this.showAiSuggestion = true;
-          this.aiText = qualityResult.guidance;
-          this.aiGuidance = qualityResult.guidance;
-          this.guidanceType = 'suggestion';
-        } else {
-          // 0-1 criteria pass - show coaching tip
-          this.animateScore(qualityResult.overallScore);
-          this.showAiSuggestion = false;
-        }
-      }
-    };
+    } else {
 
-    // 🚀 API CALL 1: Language/Abusive check
-    this.languageService.checkLanguage(text).subscribe({
-      next: (res) => {
-        abusiveResult = res.abusive;
-        languageCheckDone = true;
-        processResults();
-      },
-      error: () => {
-        languageRule.status = 'neutral';
-        abusiveResult = false; // Fail-safe: allow on error
-        languageCheckDone = true;
-        processResults();
-      }
-    });
-
-    // 🚀 API CALL 2: Quality check (runs in parallel)
-    this.languageService.checkQuality(text).subscribe({
-      next: (res: QualityResponse) => {
-        qualityResult = res;
-        qualityCheckDone = true;
-        processResults();
-      },
-      error: () => {
-        qualityCheckDone = true;
-        processResults();
-      }
-    });
-  }
-
-  /**
-   * Helper to update a guide item's status
-   */
-  private updateGuideItem(label: string, pass: boolean): void {
-    const item = this.guideItems.find(i => i.label === label);
-    if (item) {
-      item.status = pass ? 'success' : 'error';
+      this.animateScore(qualityResult.overallScore);
+      this.showAiSuggestion = false;
     }
   }
 
-  /**
-   * Update multiple guide items with staggered delays for smooth transition
-   */
-  private updateGuideItemsWithDelay(updates: Array<{ label: string, pass: boolean }>): void {
-    updates.forEach((update, index) => {
-      setTimeout(() => {
-        this.updateGuideItem(update.label, update.pass);
-      }, index * 100); // 100ms delay between each update
+  /* =====================
+     GUIDE HELPERS
+  ====================== */
+
+  private updateGuideItem(label: string, pass: boolean): void {
+    const item = this.guideItems.find(i => i.label === label);
+    if (item) item.status = pass ? 'success' : 'error';
+  }
+
+  private updateGuideItemsWithDelay(
+    updates: Array<{ label: string, pass: boolean }>
+  ): void {
+    updates.forEach((u, i) => {
+      setTimeout(() => this.updateGuideItem(u.label, u.pass), i * 100);
     });
   }
 
-canSubmit(): boolean {
-  const languageRule = this.guideItems.find(
-    item => item.label === 'Language Check'
-  );
+  /* =====================
+     SUBMIT
+  ====================== */
 
-  return (
-    languageRule?.status === 'success' &&
-    this.userText.trim().length > 0
-  );
-}
+  canSubmit(): boolean {
+    const languageRule = this.guideItems.find(
+      item => item.label === 'Abusive Check'
+    );
+    return languageRule?.status === 'success' &&
+      this.userText.trim().length > 0;
+  }
 
-postAppreciation(): void {
+  postAppreciation(): void {
+    alert("🙏 Appreciation posted successfully!");
+    this.resetToInitialState();
+  }
 
-  // Demo popup
-  alert("🙏 Appreciation posted successfully!");
+  /* =====================
+     AI ACTIONS
+  ====================== */
 
-  // Reset editor (blank text field + reset state)
-  this.resetToInitialState();
-
-  // IMPORTANT:
-  // DO NOT call this.close()
-  // because we want to stay in the editor modal
-}
-
-
-
-
-  /**
-   * Use AI suggested text
-   */
   useAiText(): void {
     this.userText = this.aiText;
     this.showAiSuggestion = false;
     this.isCheckingLanguage = true;
 
-    // Focus on textarea after pasting
     setTimeout(() => {
       this.mainTextarea?.nativeElement?.focus();
     }, 100);
 
-    // Re-run quality check on the AI suggestion text to show genuine score improvement
     this.languageService.checkQuality(this.userText.trim()).subscribe({
-      next: (res: QualityResponse) => {
+      next: (res) => {
         this.isCheckingLanguage = false;
-        if (res.success) {
-          this.updateGuideItemsWithDelay([
-            { label: 'Be specific', pass: res.quality.beSpecific.pass },
-            { label: 'Highlight impact', pass: res.quality.highlightImpact.pass },
-            { label: 'Acknowledge effort', pass: res.quality.acknowledgeEffort.pass },
-            { label: 'Reinforce consistency', pass: res.quality.reinforceConsistency.pass }
-          ]);
-          this.animateScore(res.overallScore);
-          this.aiGuidance = this.getRandomCongratulation();
-          this.guidanceType = 'suggestion';
-        }
-      },
-      error: () => {
-        // Fallback: assume AI suggestion covers all criteria
-        this.isCheckingLanguage = false;
+        if (!res.success) return;
+
         this.updateGuideItemsWithDelay([
-          { label: 'Be specific', pass: true },
-          { label: 'Highlight impact', pass: true },
-          { label: 'Acknowledge effort', pass: true },
-          { label: 'Reinforce consistency', pass: true }
+          { label: 'Be specific', pass: res.quality.beSpecific.pass },
+          { label: 'Highlight impact', pass: res.quality.highlightImpact.pass },
+          { label: 'Acknowledge effort', pass: res.quality.acknowledgeEffort.pass },
+          { label: 'Reinforce consistency', pass: res.quality.reinforceConsistency.pass }
         ]);
-        this.animateScore(100);
+
+        this.animateScore(res.overallScore);
         this.aiGuidance = this.getRandomCongratulation();
         this.guidanceType = 'suggestion';
+      },
+      error: () => {
+        this.isCheckingLanguage = false;
       }
     });
   }
 
-  /**
-   * Placeholder for AI rewrite
-   */
   rewriteWithAI(): void {
-    // TODO: Call backend AI rewrite API
+
+    if (this.userText.trim().length < 50) return;
+
+    this.isCheckingLanguage = true;
+
+    this.languageService.rewriteAppreciation(this.userText)
+      .subscribe({
+        next: (res) => {
+          this.isCheckingLanguage = false;
+          if (res.success) {
+            this.aiText = res.rewrite;
+            this.showAiSuggestion = true;
+          }
+        },
+        error: () => {
+          this.isCheckingLanguage = false;
+        }
+      });
   }
 
-  /**
-   * Close modal
-   */
+  /* =====================
+     NAVIGATION
+  ====================== */
+
   close(): void {
     this.resetToInitialState();
     this.closed.emit();
   }
 
-  /**
-   * Go back to employee selection
-   */
   goBack(): void {
     this.resetToInitialState();
     this.back.emit();
   }
 
-  /**
-   * Reset editor to initial neutral state
-   */
+  /* =====================
+     RESET
+  ====================== */
+
   private resetToInitialState(): void {
     this.userText = '';
     this.aiText = '';
@@ -328,69 +325,61 @@ postAppreciation(): void {
     this.score = 0;
     this.hasStartedTyping = false;
     this.lastGeneratedFor = '';
+    this.lastMeaningfulText = '';
     this.isCheckingLanguage = false;
     this.aiGuidance = '';
     this.guidanceType = '';
     this.updateProgress(0);
 
-
-
-    this.guideItems.forEach(item => {
-      item.status = 'neutral';
-    });
-
-    if (this.typingTimer) {
-      clearTimeout(this.typingTimer);
-      this.typingTimer = null;
-    }
+    this.guideItems.forEach(i => i.status = 'neutral');
   }
 
-get scoreClass(): string {
-  if (this.score < 40) return 'low';
-  if (this.score < 70) return 'medium';
-  return 'high';
-}
+  /* =====================
+     SCORE
+  ====================== */
 
-private animateScore(target: number): void {
-  const interval = setInterval(() => {
-    if (this.score < target) {
-      this.score++;
+  get scoreClass(): string {
+    if (this.score < 40) return 'low';
+    if (this.score < 70) return 'medium';
+    return 'high';
+  }
+
+  private animateScore(target: number): void {
+    const interval = setInterval(() => {
+      if (this.score < target) this.score++;
+      else if (this.score > target) this.score--;
+      else clearInterval(interval);
+
       this.updateProgress(this.score);
-    } else if (this.score > target) {
-      this.score--;
-      this.updateProgress(this.score);
-    } else {
-      clearInterval(interval);
-    }
-  }, 25); // Changed from 10ms to 25ms for smoother, slower animation
-}
+    }, 25);
+  }
 
+  private updateProgress(score: number): void {
+    const percent = score / 100;
+    this.dashOffset = this.circumference * (1 - percent);
+  }
 
-private updateProgress(score: number): void {
-  const percent = score / 100;
-  this.dashOffset = this.circumference * (1 - percent);
-}
+  /* =====================
+     HELPERS
+  ====================== */
 
-/**
- * Format guidance text: make words after "Consider phrases such as:" bold and cyan
- */
-formatGuidance(text: string): string {
-  if (!text) return '';
+  formatGuidance(text: string): string {
 
-  const marker = 'Consider phrases such as:';
-  const index = text.indexOf(marker);
+    if (!text) return '';
 
-  if (index === -1) return text;
+    const marker = 'Consider phrases such as:';
+    const index = text.indexOf(marker);
 
-  const before = text.substring(0, index);
-  const after = text.substring(index + marker.length);
+    if (index === -1) return text;
 
-  return `${before}<br><br><span class="try-using">${marker}</span><span class="word-suggestions">${after}</span>`;
-}
+    const before = text.substring(0, index);
+    const after = text.substring(index + marker.length);
 
-/**
- * Get a random congratulation message
- */
+    return `${before}<br><br>
+      <span class="try-using">${marker}</span>
+      <span class="word-suggestions">${after}</span>`;
+  }
+
 private getRandomCongratulation(): string {
   const messages = [
     'Your message is perfect!',
@@ -399,20 +388,18 @@ private getRandomCongratulation(): string {
     'Your recognition is spot on!',
     'Excellent appreciation!'
   ];
+
   return messages[Math.floor(Math.random() * messages.length)];
 }
 
-/**
- * Get a random encouragement message for when suggestion is available
- */
-private getRandomEncouragement(): string {
-  const messages = [
-    'Good progress! Use the suggestion below to strengthen your message.',
-    'You are on the right track! Try the enhanced version below.',
-    'Almost there! The suggestion below covers all criteria.',
-    'Nice work so far! See the improved version below.'
-  ];
-  return messages[Math.floor(Math.random() * messages.length)];
+private normalizeText(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[.,!?;:]/g, '')  // remove punctuation
+    .replace(/\s+/g, ' ')      // normalize spaces
+    .trim();
 }
+
+
 
 }

@@ -129,7 +129,17 @@
               <span *ngIf="guidanceType === 'suggestion' && !showAiSuggestion">🎉 Congratulations!</span>
               <span *ngIf="guidanceType === 'suggestion' && showAiSuggestion">✨ Almost there!</span>
             </div>
-          <div class="guidance-text" [innerHTML]="formatGuidance(aiGuidance)"></div>
+            <div class="guidance-text">
+                <span *ngIf="showAiSuggestion">
+                    Suggestions ready — check the left panel ✨
+                </span>
+
+                <span *ngIf="!showAiSuggestion"
+                    [innerHTML]="formatGuidance(aiGuidance)">
+                </span>
+
+            </div>
+
           </div>
           <div class="score-text" *ngIf="!aiGuidance && score === 0">
             <div class="guidance-text neutral">Start typing to get AI guidance....</div>

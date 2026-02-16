@@ -39,4 +39,13 @@ export class LanguageService {
       { text }
     );
   }
+
+rewriteAppreciation(text: string) {
+  return this.http.post<any>(
+    '/api/rewrite-appreciation',
+    { text }
+  );
+}
+
+
 }

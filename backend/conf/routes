@@ -21,6 +21,8 @@ POST   /api/check-abusive-words    controllers.AbusiveWordsController.checkAbusi
 # Quality API to score appreciation and get AI coaching guidance
 POST   /api/check-appreciation-quality    controllers.AppreciationQualityController.checkQuality
 
+POST   /api/rewrite-appreciation   controllers.AppreciationRewriteController.rewrite
+
 
 # Static assets from public directory
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
