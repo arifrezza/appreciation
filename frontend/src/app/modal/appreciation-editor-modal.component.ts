@@ -50,16 +50,6 @@ export class AppreciationEditorModalComponent implements AfterViewInit {
   private readonly TYPING_DELAY = 800; // 800ms for faster response
   private lastGeneratedFor: string = '';
 
-  /**
-   * Local abusive words list
-   * (Later will come from backend file / API)
-   */
-  /* private abusiveWords: string[] = [
-    'idiot',
-    'stupid',
-    'useless',
-    'nonsense'
-   ];*/
 
   /**
    * Right-side guide items
@@ -161,7 +151,7 @@ export class AppreciationEditorModalComponent implements AfterViewInit {
           this.showAiSuggestion = false;
           this.aiGuidance = this.getRandomCongratulation();
           this.guidanceType = 'suggestion'; // Show congratulations label
-        } else if (passingCount >= 3 || qualityResult.guidanceType === 'suggestion') {
+        } else if (qualityResult.guidanceType === 'suggestion') {
           // 3+ criteria pass OR backend returned suggestion — show AI suggestion
           // so user can click "Use Suggestion Text" to improve remaining criteria
           this.updateGuideItemsWithDelay([

@@ -31,7 +31,7 @@
 
         <button
                 class="rewrite-btn"
-                [disabled]="userText.length < 20"
+                [disabled]="userText.length < 50"
                 (click)="rewriteWithAI()"
         >
           ✨ Rewrite with AI
@@ -74,7 +74,7 @@
 
         <!-- GUIDE TITLE -->
         <div class="guide-title">
-          Your Recognition Guide
+          AI Assisted Recognition Guide
         </div>
 
         <!-- SCORE SECTION -->
@@ -132,7 +132,7 @@
           <div class="guidance-text" [innerHTML]="formatGuidance(aiGuidance)"></div>
           </div>
           <div class="score-text" *ngIf="!aiGuidance && score === 0">
-            <div class="guidance-text neutral">Start typing to get AI coaching...</div>
+            <div class="guidance-text neutral">Start typing to get AI guidance....</div>
           </div>
 
         </div>
