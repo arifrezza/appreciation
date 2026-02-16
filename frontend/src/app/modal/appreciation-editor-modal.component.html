@@ -72,6 +72,9 @@
       <!-- ================= RIGHT PANEL ================= -->
       <div class="right">
 
+        <!-- Scrollable area: title + score -->
+        <div class="right-scrollable">
+
         <!-- GUIDE TITLE -->
         <div class="guide-title">
           AI Assisted Recognition Guide
@@ -162,8 +165,10 @@
         </div>
         <!-- END score-wrapper -->
 
+        </div>
+        <!-- END right-scrollable -->
 
-        <!-- GUIDE ITEMS -->
+        <!-- GUIDE ITEMS (pinned at bottom) -->
         <div
                 class="guide-item"
                 *ngFor="let item of guideItems"
