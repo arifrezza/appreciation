@@ -57,8 +57,8 @@
 /* Layout */
 .container {
   display: flex;
-  gap: 24px;
-  padding: 24px;
+  gap: 14px;
+  padding: 20px;
   flex: 1;
   overflow: auto;
 }
@@ -207,6 +207,7 @@
   flex: 1;
   overflow-y: auto;
   min-height: 0;
+  padding: 10px 0;
 }
 
 .score-wrapper {
@@ -224,7 +225,7 @@
 
 .score-top-left {
   flex-shrink: 0;
-  padding: 10px;
+  padding: 8px;
 }
 
 .score-top-right {
