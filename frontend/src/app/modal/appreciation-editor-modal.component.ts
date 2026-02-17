@@ -136,6 +136,10 @@ export class AppreciationEditorModalComponent
 private countPassedCriteria(): number {
   return this.guideItems.filter(item => item.status === 'success').length;
 }
+private countAllPassed(): number {
+  return this.guideItems.filter(item => item.status === 'success').length;
+}
+
 
   /* =====================
      TEXT CHANGE
@@ -191,8 +195,8 @@ const normalized = this.normalizeText(text);
 
     if (!qualityResult || !qualityResult.success) return;
 
-    //this.guidanceType = qualityResult.guidanceType;
-    //this.aiGuidance = qualityResult.guidance;
+    this.guidanceType = qualityResult.guidanceType;
+    this.aiGuidance = qualityResult.guidance;
 
     this.updateGuideItemsWithDelay([
       { label: 'Be specific', pass: qualityResult.quality.beSpecific.pass },
@@ -201,22 +205,26 @@ const normalized = this.normalizeText(text);
       { label: 'Reinforce consistency', pass: qualityResult.quality.reinforceConsistency.pass }
     ], () => {
       this.animateScore(this.calculateWeightedScore());
-      const passedCount = this.countPassedCriteria();
+      const qualityPassed = this.countPassedCriteria();
+      const totalPassed = this.countAllPassed();
 
-        if (passedCount >= 3 && !this.hasTriggeredRewrite) {
+        if (qualityPassed >= 3 && !this.hasTriggeredRewrite) {
           this.hasTriggeredRewrite = true;
           this.rewriteWithAI();
         }
 
-        if (passedCount < 3) {
+        if (qualityPassed < 3) {
           this.showAiSuggestion = false;
           this.hasTriggeredRewrite = false;
         }
 
-        if (passedCount === 4) {
+        if (totalPassed === 5) {
           this.aiGuidance = this.getRandomCongratulation();
           this.guidanceType = 'suggestion';
-        }
+        } else {
+            this.guidanceType = qualityResult.guidanceType;
+            this.aiGuidance = qualityResult.guidance;
+            }
     });
 
     /*if (qualityResult.guidanceType === 'none') {
@@ -304,8 +312,19 @@ const normalized = this.normalizeText(text);
             { label: 'Reinforce consistency', pass: res.quality.reinforceConsistency.pass }
           ], () => {
             this.animateScore(this.calculateWeightedScore());
-            this.aiGuidance = this.getRandomCongratulation();
-            this.guidanceType = 'suggestion';
+            //this.aiGuidance = this.getRandomCongratulation();
+            //this.guidanceType = 'suggestion';
+            const passedCount = this.countPassedCriteria();
+
+              // ✅ Only show congratulation if ALL 4 pass
+              if (passedCount === 4) {
+                this.aiGuidance = this.getRandomCongratulation();
+                this.guidanceType = 'suggestion';
+              } else {
+                // ❗ Otherwise keep backend AI guidance
+                this.guidanceType = res.guidanceType;
+                this.aiGuidance = res.guidance;
+              }
           });
         },
         error: () => {
@@ -482,7 +501,6 @@ private normalizeText(text: string): string {
     .replace(/\s+/g, ' ')      // normalize spaces
     .trim();
 }
-
 
 
 }
