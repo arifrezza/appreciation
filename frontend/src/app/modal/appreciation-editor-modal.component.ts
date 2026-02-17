@@ -339,7 +339,11 @@ const normalized = this.normalizeText(text);
 
     this.isCheckingLanguage = true;
 
-    this.languageService.rewriteAppreciation(this.userText)
+    const failingCriteria = this.guideItems
+      .filter(item => item.label !== 'Abusive Check' && item.status !== 'success')
+      .map(item => item.label);
+
+    this.languageService.rewriteAppreciation(this.userText, failingCriteria)
       .subscribe({
         next: (res) => {
           this.isCheckingLanguage = false;

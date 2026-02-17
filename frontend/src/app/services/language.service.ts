@@ -40,10 +40,10 @@ export class LanguageService {
     );
   }
 
-rewriteAppreciation(text: string) {
+rewriteAppreciation(text: string, failingCriteria: string[]) {
   return this.http.post<any>(
     '/api/rewrite-appreciation',
-    { text }
+    { text, failingCriteria }
   );
 }
 

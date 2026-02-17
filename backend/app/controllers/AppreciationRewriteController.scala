@@ -16,6 +16,7 @@ class AppreciationRewriteController @Inject()(
 	def rewrite(): Action[JsValue] = Action.async(parse.json) { request =>
 
 		val textOpt = (request.body \ "text").asOpt[String]
+		val failingCriteria = (request.body \ "failingCriteria").asOpt[Seq[String]].getOrElse(Seq.empty)
 
 		textOpt match {
 
@@ -36,7 +37,7 @@ class AppreciationRewriteController @Inject()(
 				)
 
 			case Some(text) =>
-				rewriteService.rewrite(text).map {
+				rewriteService.rewrite(text, failingCriteria).map {
 					case Right(rewrite) =>
 						Ok(Json.obj(
 							"success" -> true,

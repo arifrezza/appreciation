@@ -19,24 +19,51 @@ class AppreciationRewriteService @Inject()(
 			throw new RuntimeException("OPENAI_API_KEY not set")
 		)
 
-	// Rewrite-specific prompt
-	private val systemPrompt: String =
-		"""You improve employee appreciation messages.
+	private val criteriaDescriptions: Map[String, String] = Map(
+		"Be specific" -> "Mention a concrete action, task, project, or achievement. Vague praise like 'great job' is not enough — name a specific deliverable, event, or task.",
+		"Highlight impact" -> "Explain the effect on the team, project, timeline, or organization. Describe a consequence or outcome of what the person did.",
+		"Acknowledge effort" -> "Recognize the effort, dedication, perseverance, or hard work involved. Reference the person's dedication, extra hours, or determination.",
+		"Reinforce consistency" -> "Encourage continued behavior or express confidence in future contributions. Add a forward-looking phrase that encourages repetition of the good behavior."
+	)
+
+	private val basePrompt: String =
+		"""You improve employee appreciation messages for a corporate recognition platform.
 
 Rules:
 - Preserve original meaning and tone.
 - Keep user wording whenever possible.
-- Improve clarity, professionalism, and structure.
-- Do NOT invent fake details.
-- Keep concise.
-- Return ONLY rewritten text (no explanation)."""
+- Do NOT invent fake details (projects, names, events) not in the original.
+- Keep concise — only add what is needed.
+- Use professional formal language.
+- Return ONLY the rewritten text (no explanation, no quotes)."""
 
-	def rewrite(text: String): Future[Either[String, String]] = {
+	private def buildPrompt(failingCriteria: Seq[String]): String = {
+		if (failingCriteria.isEmpty) {
+			basePrompt + "\n\nImprove clarity, professionalism, and structure."
+		} else {
+			val criteriaSection = failingCriteria.flatMap { name =>
+				criteriaDescriptions.get(name).map(desc => s"- $name: $desc")
+			}.mkString("\n")
+
+			basePrompt +
+				s"""
+				   |
+				   |The message currently FAILS the following quality criteria. You MUST specifically address each one by adding or enhancing relevant phrases:
+				   |
+				   |$criteriaSection
+				   |
+				   |Keep parts of the message that already satisfy passing criteria unchanged. Only modify or add what is needed for the failing criteria listed above.""".stripMargin
+		}
+	}
+
+	def rewrite(text: String, failingCriteria: Seq[String]): Future[Either[String, String]] = {
+
+		val prompt = buildPrompt(failingCriteria)
 
 		val body = Json.obj(
 			"model" -> "gpt-4o-mini",
 			"messages" -> Json.arr(
-				Json.obj("role" -> "system", "content" -> systemPrompt),
+				Json.obj("role" -> "system", "content" -> prompt),
 				Json.obj("role" -> "user", "content" -> text)
 			),
 			"temperature" -> 0.3,
