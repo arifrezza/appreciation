@@ -196,9 +196,6 @@ const normalized = this.normalizeText(text);
 
     if (!qualityResult || !qualityResult.success) return;
 
-    this.guidanceType = qualityResult.guidanceType;
-    this.aiGuidance = qualityResult.guidance;
-
     this.updateGuideItemsWithDelay([
       { label: 'Be specific', pass: qualityResult.quality.beSpecific.pass },
       { label: 'Highlight impact', pass: qualityResult.quality.highlightImpact.pass },
@@ -206,47 +203,30 @@ const normalized = this.normalizeText(text);
       { label: 'Reinforce consistency', pass: qualityResult.quality.reinforceConsistency.pass }
     ], () => {
       this.animateScore(this.calculateWeightedScore());
-      const qualityPassed = this.countPassedCriteria();
       const totalPassed = this.countAllPassed();
 
-        if (qualityPassed >= 3 && !this.hasTriggeredRewrite) {
-          this.hasTriggeredRewrite = true;
-          this.rewriteWithAI();
-        }
-
-        if (qualityPassed < 3) {
-          this.showAiSuggestion = false;
-          this.hasTriggeredRewrite = false;
-        }
-
-        if (totalPassed === 5) {
+        if (totalPassed === 5 || qualityResult.guidanceType === 'none') {
+          // All criteria passed → congratulations
           this.showCongratulation = true;
+          this.showAiSuggestion = false;
           this.aiGuidance = this.getRandomCongratulation();
           this.guidanceType = 'suggestion';
+        } else if (qualityResult.guidanceType === 'suggestion') {
+          // Backend returned a rewritten suggestion → show in AI suggestion box
+          this.showCongratulation = false;
+          this.showAiSuggestion = true;
+          this.aiText = qualityResult.guidance;
+          this.aiGuidance = qualityResult.guidance;
+          this.guidanceType = 'suggestion';
         } else {
-            this.showCongratulation = false;
-            this.guidanceType = qualityResult.guidanceType;
-            this.aiGuidance = qualityResult.guidance;
-            }
+          // Tips/questions → show as guidance on the right
+          this.showCongratulation = false;
+          this.showAiSuggestion = false;
+          this.guidanceType = qualityResult.guidanceType;
+          this.aiGuidance = qualityResult.guidance;
+        }
     });
 
-    /*if (qualityResult.guidanceType === 'none') {
-
-      this.showAiSuggestion = false;
-      this.aiGuidance = this.getRandomCongratulation();
-      this.guidanceType = 'suggestion';
-
-    } else if (qualityResult.guidanceType === 'suggestion') {
-
-      this.showAiSuggestion = true;
-      this.aiText = qualityResult.guidance;
-      this.aiGuidance = qualityResult.guidance;
-      this.guidanceType = 'suggestion';
-
-    } else {
-
-      this.showAiSuggestion = false;
-    } */
   }
 
   /* =====================
