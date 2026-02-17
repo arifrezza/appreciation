@@ -106,6 +106,7 @@ export class AppreciationEditorModalComponent
   private readonly TYPING_DELAY = 1000;
   private lastGeneratedFor = '';
   private lastMeaningfulText = '';
+  private hasTriggeredRewrite = false;
 
 
   // ⭐ reactive streams
@@ -131,6 +132,10 @@ export class AppreciationEditorModalComponent
     { label: 'Acknowledge effort', status: 'neutral' as RuleStatus },
     { label: 'Reinforce consistency', status: 'neutral' as RuleStatus }
   ];
+
+private countPassedCriteria(): number {
+  return this.guideItems.filter(item => item.status === 'success').length;
+}
 
   /* =====================
      TEXT CHANGE
@@ -186,8 +191,8 @@ const normalized = this.normalizeText(text);
 
     if (!qualityResult || !qualityResult.success) return;
 
-    this.guidanceType = qualityResult.guidanceType;
-    this.aiGuidance = qualityResult.guidance;
+    //this.guidanceType = qualityResult.guidanceType;
+    //this.aiGuidance = qualityResult.guidance;
 
     this.updateGuideItemsWithDelay([
       { label: 'Be specific', pass: qualityResult.quality.beSpecific.pass },
@@ -196,9 +201,25 @@ const normalized = this.normalizeText(text);
       { label: 'Reinforce consistency', pass: qualityResult.quality.reinforceConsistency.pass }
     ], () => {
       this.animateScore(this.calculateWeightedScore());
+      const passedCount = this.countPassedCriteria();
+
+        if (passedCount >= 3 && !this.hasTriggeredRewrite) {
+          this.hasTriggeredRewrite = true;
+          this.rewriteWithAI();
+        }
+
+        if (passedCount < 3) {
+          this.showAiSuggestion = false;
+          this.hasTriggeredRewrite = false;
+        }
+
+        if (passedCount === 4) {
+          this.aiGuidance = this.getRandomCongratulation();
+          this.guidanceType = 'suggestion';
+        }
     });
 
-    if (qualityResult.guidanceType === 'none') {
+    /*if (qualityResult.guidanceType === 'none') {
 
       this.showAiSuggestion = false;
       this.aiGuidance = this.getRandomCongratulation();
@@ -214,7 +235,7 @@ const normalized = this.normalizeText(text);
     } else {
 
       this.showAiSuggestion = false;
-    }
+    } */
   }
 
   /* =====================
@@ -263,36 +284,35 @@ const normalized = this.normalizeText(text);
   ====================== */
 
   useAiText(): void {
-    this.userText = this.aiText;
-    this.showAiSuggestion = false;
-    this.isCheckingLanguage = true;
+      this.userText = this.aiText;
+      this.showAiSuggestion = false;
+      this.isCheckingLanguage = true;
 
-    setTimeout(() => {
-      this.mainTextarea?.nativeElement?.focus();
-    }, 100);
+      setTimeout(() => {
+        this.mainTextarea?.nativeElement?.focus();
+      }, 100);
 
-    this.languageService.checkQuality(this.userText.trim()).subscribe({
-      next: (res) => {
-        this.isCheckingLanguage = false;
-        if (!res.success) return;
+      this.languageService.checkQuality(this.userText.trim()).subscribe({
+        next: (res) => {
+          this.isCheckingLanguage = false;
+          if (!res.success) return;
 
-        this.updateGuideItemsWithDelay([
-          { label: 'Be specific', pass: res.quality.beSpecific.pass },
-          { label: 'Highlight impact', pass: res.quality.highlightImpact.pass },
-          { label: 'Acknowledge effort', pass: res.quality.acknowledgeEffort.pass },
-          { label: 'Reinforce consistency', pass: res.quality.reinforceConsistency.pass }
-        ], () => {
-          this.animateScore(this.calculateWeightedScore());
-        });
-
-        this.aiGuidance = this.getRandomCongratulation();
-        this.guidanceType = 'suggestion';
-      },
-      error: () => {
-        this.isCheckingLanguage = false;
-      }
-    });
-  }
+          this.updateGuideItemsWithDelay([
+            { label: 'Be specific', pass: res.quality.beSpecific.pass },
+            { label: 'Highlight impact', pass: res.quality.highlightImpact.pass },
+            { label: 'Acknowledge effort', pass: res.quality.acknowledgeEffort.pass },
+            { label: 'Reinforce consistency', pass: res.quality.reinforceConsistency.pass }
+          ], () => {
+            this.animateScore(this.calculateWeightedScore());
+            this.aiGuidance = this.getRandomCongratulation();
+            this.guidanceType = 'suggestion';
+          });
+        },
+        error: () => {
+          this.isCheckingLanguage = false;
+        }
+      });
+    }
 
   rewriteWithAI(): void {
 
@@ -341,10 +361,13 @@ const normalized = this.normalizeText(text);
     this.hasStartedTyping = false;
     this.lastGeneratedFor = '';
     this.lastMeaningfulText = '';
+    this.hasTriggeredRewrite = false;
     this.isCheckingLanguage = false;
     this.aiGuidance = '';
     this.guidanceType = '';
     this.updateProgress(0);
+
+
 
     this.guideItems.forEach(i => i.status = 'neutral');
   }
@@ -432,6 +455,20 @@ private getRandomCongratulation(): string {
     'Great job on your appreciation!',
     'Well written message!',
     'Your recognition is spot on!',
+    'This appreciation is beautifully written.',
+        'You’ve captured their impact perfectly.',
+        'Excellent acknowledgment of effort!',
+        'Your recognition feels sincere and meaningful.',
+        'Strong appreciation — clear and impactful.',
+        'You’ve highlighted their contribution brilliantly.',
+        'This message truly celebrates their work.',
+        'Fantastic job recognizing their achievement!',
+        'Your words make a real difference.',
+        'This is thoughtful and well articulated.',
+        'You’re setting a great example of recognition.',
+        'Impressive clarity and appreciation.',
+        'This recognition feels authentic and powerful.',
+        'Well done — this will truly motivate them!',
     'Excellent appreciation!'
   ];
 
