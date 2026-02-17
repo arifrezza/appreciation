@@ -97,6 +97,7 @@ export class AppreciationEditorModalComponent
 
   aiGuidance = '';
   guidanceType: 'question' | 'suggestion' | 'none' | '' = '';
+  showCongratulation = false;
 
   radius = 34;
   circumference = 2 * Math.PI * this.radius;
@@ -134,7 +135,7 @@ export class AppreciationEditorModalComponent
   ];
 
 private countPassedCriteria(): number {
-  return this.guideItems.filter(item => item.status === 'success').length;
+  return this.guideItems.filter(item => item.label !== 'Abusive Check' && item.status === 'success').length;
 }
 private countAllPassed(): number {
   return this.guideItems.filter(item => item.status === 'success').length;
@@ -219,9 +220,11 @@ const normalized = this.normalizeText(text);
         }
 
         if (totalPassed === 5) {
+          this.showCongratulation = true;
           this.aiGuidance = this.getRandomCongratulation();
           this.guidanceType = 'suggestion';
         } else {
+            this.showCongratulation = false;
             this.guidanceType = qualityResult.guidanceType;
             this.aiGuidance = qualityResult.guidance;
             }
@@ -314,14 +317,16 @@ const normalized = this.normalizeText(text);
             this.animateScore(this.calculateWeightedScore());
             //this.aiGuidance = this.getRandomCongratulation();
             //this.guidanceType = 'suggestion';
-            const passedCount = this.countPassedCriteria();
+            const passedCount = this.countAllPassed();
 
               // ✅ Only show congratulation if ALL 5 pass (4 quality + Abusive Check)
               if (passedCount === 5) {
+                this.showCongratulation = true;
                 this.aiGuidance = this.getRandomCongratulation();
                 this.guidanceType = 'suggestion';
               } else {
                 // ❗ Otherwise keep backend AI guidance
+                this.showCongratulation = false;
                 this.guidanceType = res.guidanceType;
                 this.aiGuidance = res.guidance;
               }
@@ -388,6 +393,7 @@ const normalized = this.normalizeText(text);
     this.isCheckingLanguage = false;
     this.aiGuidance = '';
     this.guidanceType = '';
+    this.showCongratulation = false;
     this.updateProgress(0);
 
 
