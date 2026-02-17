@@ -316,8 +316,8 @@ const normalized = this.normalizeText(text);
             //this.guidanceType = 'suggestion';
             const passedCount = this.countPassedCriteria();
 
-              // ✅ Only show congratulation if ALL 4 pass
-              if (passedCount === 4) {
+              // ✅ Only show congratulation if ALL 5 pass (4 quality + Abusive Check)
+              if (passedCount === 5) {
                 this.aiGuidance = this.getRandomCongratulation();
                 this.guidanceType = 'suggestion';
               } else {
