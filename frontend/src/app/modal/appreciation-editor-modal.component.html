@@ -17,50 +17,29 @@
       <!-- ================= LEFT PANEL ================= -->
       <div class="left">
 
-        <textarea
-                #mainTextarea
-                class="main-text"
-                [(ngModel)]="userText"
-                (input)="onTextChange()"
-                autofocus
-        ></textarea>
+        <textarea #mainTextarea class="main-text" [(ngModel)]="userText" (input)="onTextChange()" autofocus></textarea>
 
         <div class="char-count">
           {{ userText.length }}
         </div>
 
-        <button
-                class="rewrite-btn"
-                [disabled]="userText.length < 50"
-                (click)="rewriteWithAI()"
-        >
+        <button class="rewrite-btn" [disabled]="userText.length < 50" (click)="rewriteWithAI()">
           ✨ Rewrite with AI
         </button>
 
         <!-- AI Suggestion -->
         <div class="ai-suggestion" *ngIf="showAiSuggestion">
           <div class="ai-label">✨ AI Generated Suggestion</div>
-          <textarea
-                  class="ai-text"
-                  [value]="aiText"
-                  readonly
-          ></textarea>
+          <textarea class="ai-text" [value]="aiText" readonly></textarea>
 
-          <button
-                  class="use-btn"
-                  (click)="useAiText()"
-          >
+          <button class="use-btn" (click)="useAiText()">
             Use Suggestion Text
           </button>
         </div>
 
         <!-- POST button -->
         <div class="post-btn-wrapper">
-          <button
-                  class="submit-btn"
-                  [disabled]="!canSubmit()"
-                  (click)="postAppreciation()"
-          >
+          <button class="submit-btn" [disabled]="!canSubmit()" (click)="postAppreciation()">
             POST
           </button>
         </div>
@@ -75,125 +54,94 @@
         <!-- Scrollable area: title + score -->
         <div class="right-scrollable">
 
-        <!-- GUIDE TITLE -->
-        <div class="guide-title">
-          AI Assisted Recognition Guide
-        </div>
+          <!-- GUIDE TITLE -->
+          <div class="guide-title">
+            AI Assisted Recognition Guide
+          </div>
 
-        <!-- SCORE SECTION -->
-        <div class="score-wrapper">
+          <!-- SCORE SECTION -->
+          <div class="score-wrapper">
 
-          <!-- TOP: Circle (left) + Guidance (right) -->
-          <div class="score-top">
+            <!-- TOP: Circle (left) + Guidance (right) -->
+            <div class="score-top">
 
-            <!-- Left: Circular Progress -->
-            <div class="score-top-left">
-              <div class="circle-wrapper">
+              <!-- Left: Circular Progress -->
+              <div class="score-top-left">
+                <div class="circle-wrapper">
 
-                <svg
-                        class="progress-ring"
-                        width="80"
-                        height="80"
-                >
-                  <!-- Background -->
-                  <circle
-                          class="ring-bg"
-                          cx="40"
-                          cy="40"
-                          r="34">
-                  </circle>
+                  <svg class="progress-ring" width="80" height="80">
+                    <!-- Background -->
+                    <circle class="ring-bg" cx="40" cy="40" r="34">
+                    </circle>
 
-                  <!-- Progress -->
-                  <circle
-                          class="ring-progress"
-                          cx="40"
-                          cy="40"
-                          r="34"
-                          [attr.stroke-dasharray]="circumference"
-                          [attr.stroke-dashoffset]="dashOffset"
-                          [ngClass]="[
+                    <!-- Progress -->
+                    <circle class="ring-progress" cx="40" cy="40" r="34" [attr.stroke-dasharray]="circumference"
+                      [attr.stroke-dashoffset]="dashOffset" [ngClass]="[
                       scoreClass,
                       isCheckingLanguage ? 'checking' : ''
                     ]">
-                  </circle>
-                </svg>
+                    </circle>
+                  </svg>
 
-                <!-- Inner Value -->
-                <div
-                        class="score-value"
-                        [class.thinking]="isCheckingLanguage"
-                >
-                  {{ score }}%
+                  <!-- Inner Value -->
+                  <div class="score-value" [class.thinking]="isCheckingLanguage">
+                    {{ score }}%
+                  </div>
+
                 </div>
-
               </div>
+
+              <!-- Right: AI Coaching Message -->
+              <div class="score-top-right">
+                <div class="score-text" *ngIf="aiGuidance">
+                  <!--<div class="guidance-label" [ngClass]="guidanceType">-->
+                  <div class="guidance-label"
+                    [ngClass]="[guidanceType, scoreClass, isCheckingLanguage ? 'thinking' : '']">
+                    <span class="bulb-icon" *ngIf="guidanceType !== 'abusive'">💡</span>
+
+                    <span *ngIf="showCongratulation">🎉 Congratulations!</span>
+                    <span *ngIf="!showCongratulation && guidanceType === 'abusive'">⚠️ Offensive</span>
+                    <span *ngIf="!showCongratulation && guidanceType !== 'abusive'">Quick AI tip:</span>
+                  </div>
+                  <div class="guidance-text">
+                    <span [innerHTML]="getGuidanceMainText(aiGuidance)"></span>
+                  </div>
+                </div>
+                <div class="score-text" *ngIf="!aiGuidance && score === 0">
+                  <div class="guidance-text neutral">Start typing to get AI guidance....</div>
+                </div>
+              </div>
+
             </div>
+            <!-- END score-top -->
 
-            <!-- Right: AI Coaching Message -->
-            <div class="score-top-right">
-              <div class="score-text" *ngIf="aiGuidance">
-                <div class="guidance-label" [ngClass]="guidanceType">
-                  <span *ngIf="showCongratulation">🎉 Congratulations!</span>
-                  <span *ngIf="!showCongratulation && showAiSuggestion">✨ Almost there!</span>
-                  <span *ngIf="!showCongratulation && !showAiSuggestion">💡 Quick tip:</span>
-                </div>
-                <div class="guidance-text">
-                  <span *ngIf="showAiSuggestion">
-                    Suggestions ready — check the left panel ✨
-                  </span>
-                  <span *ngIf="!showAiSuggestion"
-                        [innerHTML]="getGuidanceMainText(aiGuidance)">
-                  </span>
-                </div>
-              </div>
-              <div class="score-text" *ngIf="!aiGuidance && score === 0">
-                <div class="guidance-text neutral">Start typing to get AI guidance....</div>
+            <!-- BOTTOM: "Consider phrases such as:" -->
+            <div class="score-bottom" *ngIf="getGuidancePhrases(aiGuidance)">
+              <div class="guidance-text">
+                <span class="try-using">Consider phrases such as:</span>
+                <span class="word-suggestions">{{ getGuidancePhrases(aiGuidance) }}</span>
               </div>
             </div>
 
           </div>
-          <!-- END score-top -->
-
-          <!-- BOTTOM: "Consider phrases such as:" -->
-          <div class="score-bottom" *ngIf="getGuidancePhrases(aiGuidance)">
-            <div class="guidance-text">
-              <span class="try-using">Consider phrases such as:</span>
-              <span class="word-suggestions">{{ getGuidancePhrases(aiGuidance) }}</span>
-            </div>
-          </div>
-
-        </div>
-        <!-- END score-wrapper -->
+          <!-- END score-wrapper -->
 
         </div>
         <!-- END right-scrollable -->
 
         <!-- GUIDE ITEMS (pinned at bottom) -->
-        <div
-                class="guide-item"
-                *ngFor="let item of guideItems"
-                [ngClass]="item.status"
-        >
+        <div class="guide-item" *ngFor="let item of guideItems" [ngClass]="item.status">
           <span>{{ item.label }}</span>
 
-          <span
-                  class="icon"
-                  *ngIf="item.status === 'success'"
-          >
+          <span class="icon" *ngIf="item.status === 'success'">
             ✓
           </span>
 
-          <span
-                  class="icon"
-                  *ngIf="item.status === 'error'"
-          >
+          <span class="icon" *ngIf="item.status === 'error'">
             ✕
           </span>
 
-          <span
-                  class="icon neutral-icon"
-                  *ngIf="item.status === 'neutral'"
-          >
+          <span class="icon neutral-icon" *ngIf="item.status === 'neutral'">
             ●
           </span>
         </div>

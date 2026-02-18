@@ -25,7 +25,7 @@ export class AppreciationEditorModalComponent
 
   @ViewChild('mainTextarea') mainTextarea!: ElementRef<HTMLTextAreaElement>;
 
-  constructor(private languageService: LanguageService) {}
+  constructor(private languageService: LanguageService) { }
 
   /* =====================
      LIFECYCLE
@@ -71,7 +71,7 @@ export class AppreciationEditorModalComponent
   }
 
   ngOnDestroy(): void {
-      console.log("DESTROY CALLED"); // 👈 add this
+    console.log("DESTROY CALLED"); // 👈 add this
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -96,7 +96,7 @@ export class AppreciationEditorModalComponent
   isCheckingLanguage = false;
 
   aiGuidance = '';
-  guidanceType: 'question' | 'suggestion' | 'none' | '' = '';
+  guidanceType: 'question' | 'suggestion' | 'none' | 'abusive' | '' = '';
   showCongratulation = false;
 
   radius = 34;
@@ -104,10 +104,10 @@ export class AppreciationEditorModalComponent
   dashOffset = this.circumference;
 
   private hasStartedTyping = false;
-  private readonly TYPING_DELAY = 1000;
+  private readonly TYPING_DELAY = 1400;
   private lastGeneratedFor = '';
   private lastMeaningfulText = '';
-  private hasTriggeredRewrite = false;
+  private lastRewriteAtTickCount = -1;  // tracks which tick count last triggered a rewrite
 
 
   // ⭐ reactive streams
@@ -119,9 +119,9 @@ export class AppreciationEditorModalComponent
   ====================== */
 
   private readonly weightageMap: Record<string, number> = {
-    'Abusive Check': 10,
+    'Abusive Check': 3,
     'Be specific': 35,
-    'Highlight impact': 30,
+    'Highlight impact': 37,
     'Acknowledge effort': 15,
     'Reinforce consistency': 10
   };
@@ -134,12 +134,18 @@ export class AppreciationEditorModalComponent
     { label: 'Reinforce consistency', status: 'neutral' as RuleStatus }
   ];
 
-private countPassedCriteria(): number {
-  return this.guideItems.filter(item => item.label !== 'Abusive Check' && item.status === 'success').length;
-}
-private countAllPassed(): number {
-  return this.guideItems.filter(item => item.status === 'success').length;
-}
+  private countPassedCriteria(): number {
+    console.log("countPassedCriteria");
+    console.log(this.guideItems.filter(item => item.label !== 'Abusive Check' && item.status === 'success').length);
+    return this.guideItems.filter(item => item.label !== 'Abusive Check' && item.status === 'success').length;
+
+  }
+
+  //This gives no of Green Tick including Ausive Check
+  private countAllPassed(): number {
+    return this.guideItems.filter(item => item.status === 'success').length;
+
+  }
 
 
   /* =====================
@@ -159,13 +165,13 @@ private countAllPassed(): number {
       this.hasStartedTyping = true;
     }
 
-const normalized = this.normalizeText(text);
+    const normalized = this.normalizeText(text);
 
-  if (normalized === this.lastMeaningfulText) {
-    return; // ❌ skip AI call
-  }
+    if (normalized === this.lastMeaningfulText) {
+      return; // ❌ skip AI call
+    }
 
-  this.lastMeaningfulText = normalized;
+    this.lastMeaningfulText = normalized;
 
     // ⭐ push to reactive stream
     this.typingSubject.next(text);
@@ -189,6 +195,16 @@ const normalized = this.normalizeText(text);
     // abusive check
     if (language.abusive) {
       languageRule.status = 'error';
+      // Cascade: mark all other criteria as error and reset score to 0
+      this.guideItems.forEach(item => {
+        if (item.label !== 'Abusive Check') item.status = 'error';
+      });
+      this.animateScore(0);
+      this.showAiSuggestion = false;
+      this.lastRewriteAtTickCount = -1;
+      this.showCongratulation = false;
+      this.aiGuidance = 'Your message contains inappropriate language. Please revise it before continuing.';
+      this.guidanceType = 'abusive';
       return;
     }
 
@@ -205,26 +221,31 @@ const normalized = this.normalizeText(text);
       this.animateScore(this.calculateWeightedScore());
       const totalPassed = this.countAllPassed();
 
-        if (totalPassed === 5 || qualityResult.guidanceType === 'none') {
-          // All criteria passed → congratulations
-          this.showCongratulation = true;
-          this.showAiSuggestion = false;
-          this.aiGuidance = this.getRandomCongratulation();
-          this.guidanceType = 'suggestion';
-        } else if (qualityResult.guidanceType === 'suggestion') {
-          // Backend returned a rewritten suggestion → show in AI suggestion box
-          this.showCongratulation = false;
-          this.showAiSuggestion = true;
-          this.aiText = qualityResult.guidance;
-          this.aiGuidance = qualityResult.guidance;
-          this.guidanceType = 'suggestion';
-        } else {
-          // Tips/questions → show as guidance on the right
-          this.showCongratulation = false;
-          this.showAiSuggestion = false;
-          this.guidanceType = qualityResult.guidanceType;
-          this.aiGuidance = qualityResult.guidance;
-        }
+      // Hide AI suggestion if ticks drop below 3; reset so it re-triggers on recovery
+      if (totalPassed < 3) {
+        this.showAiSuggestion = false;
+        this.lastRewriteAtTickCount = -1;
+      }
+
+      // Auto-trigger rewrite at 3+ ticks, and re-trigger whenever tick count increases
+      if (totalPassed >= 3 && totalPassed !== this.lastRewriteAtTickCount) {
+        this.lastRewriteAtTickCount = totalPassed;
+        this.rewriteWithAI();
+        // fall through — still update right panel guidance below
+      }
+
+      if (totalPassed === 5 || qualityResult.guidanceType === 'none') {
+        // All criteria passed → congratulations
+        this.showCongratulation = true;
+        this.showAiSuggestion = false;
+        this.aiGuidance = this.getRandomCongratulation();
+        this.guidanceType = 'suggestion';
+      } else {
+        // Tips/questions → show as guidance on the right
+        this.showCongratulation = false;
+        this.guidanceType = qualityResult.guidanceType;
+        this.aiGuidance = qualityResult.guidance;
+      }
     });
 
   }
@@ -275,48 +296,49 @@ const normalized = this.normalizeText(text);
   ====================== */
 
   useAiText(): void {
-      this.userText = this.aiText;
-      this.showAiSuggestion = false;
-      this.isCheckingLanguage = true;
+    this.userText = this.aiText;
+    this.showAiSuggestion = false;
+    this.isCheckingLanguage = true;
 
-      setTimeout(() => {
-        this.mainTextarea?.nativeElement?.focus();
-      }, 100);
+    setTimeout(() => {
+      this.mainTextarea?.nativeElement?.focus();
+    }, 100);
 
-      this.languageService.checkQuality(this.userText.trim()).subscribe({
-        next: (res) => {
-          this.isCheckingLanguage = false;
-          if (!res.success) return;
+    // Here You get the Response of type Quality Response
+    this.languageService.checkQuality(this.userText.trim()).subscribe({
+      next: (res) => {
+        this.isCheckingLanguage = false;
+        if (!res.success) return;
 
-          this.updateGuideItemsWithDelay([
-            { label: 'Be specific', pass: res.quality.beSpecific.pass },
-            { label: 'Highlight impact', pass: res.quality.highlightImpact.pass },
-            { label: 'Acknowledge effort', pass: res.quality.acknowledgeEffort.pass },
-            { label: 'Reinforce consistency', pass: res.quality.reinforceConsistency.pass }
-          ], () => {
-            this.animateScore(this.calculateWeightedScore());
-            //this.aiGuidance = this.getRandomCongratulation();
-            //this.guidanceType = 'suggestion';
-            const passedCount = this.countAllPassed();
+        this.updateGuideItemsWithDelay([
+          { label: 'Be specific', pass: res.quality.beSpecific.pass },
+          { label: 'Highlight impact', pass: res.quality.highlightImpact.pass },
+          { label: 'Acknowledge effort', pass: res.quality.acknowledgeEffort.pass },
+          { label: 'Reinforce consistency', pass: res.quality.reinforceConsistency.pass }
+        ], () => {
+          this.animateScore(this.calculateWeightedScore());
+          //this.aiGuidance = this.getRandomCongratulation();
+          //this.guidanceType = 'suggestion';
+          const passedCount = this.countAllPassed();
 
-              // ✅ Only show congratulation if ALL 5 pass (4 quality + Abusive Check)
-              if (passedCount === 5) {
-                this.showCongratulation = true;
-                this.aiGuidance = this.getRandomCongratulation();
-                this.guidanceType = 'suggestion';
-              } else {
-                // ❗ Otherwise keep backend AI guidance
-                this.showCongratulation = false;
-                this.guidanceType = res.guidanceType;
-                this.aiGuidance = res.guidance;
-              }
-          });
-        },
-        error: () => {
-          this.isCheckingLanguage = false;
-        }
-      });
-    }
+          // ✅ Only show congratulation if ALL 5 pass (4 quality + Abusive Check)
+          if (passedCount === 5) {
+            this.showCongratulation = true;
+            this.aiGuidance = this.getRandomCongratulation();
+            this.guidanceType = 'suggestion';
+          } else {
+            // ❗ Otherwise keep backend AI guidance
+            this.showCongratulation = false;
+            this.guidanceType = res.guidanceType;
+            this.aiGuidance = res.guidance;
+          }
+        });
+      },
+      error: () => {
+        this.isCheckingLanguage = false;
+      }
+    });
+  }
 
   rewriteWithAI(): void {
 
@@ -369,7 +391,7 @@ const normalized = this.normalizeText(text);
     this.hasStartedTyping = false;
     this.lastGeneratedFor = '';
     this.lastMeaningfulText = '';
-    this.hasTriggeredRewrite = false;
+    this.lastRewriteAtTickCount = -1;
     this.isCheckingLanguage = false;
     this.aiGuidance = '';
     this.guidanceType = '';
@@ -458,39 +480,39 @@ const normalized = this.normalizeText(text);
     return text.substring(index + marker.length).trim();
   }
 
-private getRandomCongratulation(): string {
-  const messages = [
-    'Your message is perfect!',
-    'Great job on your appreciation!',
-    'Well written message!',
-    'Your recognition is spot on!',
-    'This appreciation is beautifully written.',
-        'You’ve captured their impact perfectly.',
-        'Excellent acknowledgment of effort!',
-        'Your recognition feels sincere and meaningful.',
-        'Strong appreciation — clear and impactful.',
-        'You’ve highlighted their contribution brilliantly.',
-        'This message truly celebrates their work.',
-        'Fantastic job recognizing their achievement!',
-        'Your words make a real difference.',
-        'This is thoughtful and well articulated.',
-        'You’re setting a great example of recognition.',
-        'Impressive clarity and appreciation.',
-        'This recognition feels authentic and powerful.',
-        'Well done — this will truly motivate them!',
-    'Excellent appreciation!'
-  ];
+  private getRandomCongratulation(): string {
+    const messages = [
+      'Your message is perfect!',
+      'Great job on your appreciation!',
+      'Well written message!',
+      'Your recognition is spot on!',
+      'This appreciation is beautifully written.',
+      'You’ve captured their impact perfectly.',
+      'Excellent acknowledgment of effort!',
+      'Your recognition feels sincere and meaningful.',
+      'Strong appreciation — clear and impactful.',
+      'You’ve highlighted their contribution brilliantly.',
+      'This message truly celebrates their work.',
+      'Fantastic job recognizing their achievement!',
+      'Your words make a real difference.',
+      'This is thoughtful and well articulated.',
+      'You’re setting a great example of recognition.',
+      'Impressive clarity and appreciation.',
+      'This recognition feels authentic and powerful.',
+      'Well done — this will truly motivate them!',
+      'Excellent appreciation!'
+    ];
 
-  return messages[Math.floor(Math.random() * messages.length)];
-}
+    return messages[Math.floor(Math.random() * messages.length)];
+  }
 
-private normalizeText(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[.,!?;:]/g, '')  // remove punctuation
-    .replace(/\s+/g, ' ')      // normalize spaces
-    .trim();
-}
+  private normalizeText(text: string): string {
+    return text
+      .toLowerCase()
+      .replace(/[.,!?;:]/g, '')  // remove punctuation
+      .replace(/\s+/g, ' ')      // normalize spaces
+      .trim();
+  }
 
 
 }

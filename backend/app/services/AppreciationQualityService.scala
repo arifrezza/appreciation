@@ -77,24 +77,19 @@ IMPORTANT: Generate ONLY ONE tip for ONE criterion. Never combine tips.
 
 ### If 2 or more criteria pass but NOT all 4 (guidanceType: "suggestion")
 
-Generate an enhanced version of the user's original message that:
-- Keeps the user's original text as the foundation (preserve their words, tone, and intent)
-- Adds short phrases or sentences that specifically address the FAILING criteria only
-- Does NOT rewrite or rephrase parts that already pass — keep those verbatim
-- Uses professional formal language appropriate for a corporate recognition platform
-- Is concise: only add what is needed to satisfy the failing criteria, do not over-embellish
-- Do NOT fabricate details (projects, names, events) that were not in the original message
-- If the original mentions a specific task or project, use that context when adding impact/effort/consistency phrases
+Identify the SINGLE weakest failing criterion (lowest score among the ones that did NOT pass). Provide exactly ONE coaching tip that:
+- References what the user actually wrote
+- Asks a specific question or gives a specific suggestion to draw out the missing element
+- Ends with four suggested words or phrases
 
-The goal is that if the user adopts this suggestion, ALL 4 criteria would pass.
+Format: "[Tip referencing their message that targets the weakest failing criterion] Consider phrases such as: [phrase1], [phrase2], [phrase3], [phrase4]"
+
+IMPORTANT: Generate ONLY ONE tip for ONE criterion. Never combine tips. Do NOT rewrite the full message here — that is handled separately.
 
 ### If all 4 criteria pass (guidanceType: "none")
 
 Set guidanceType to "none" and guidance to an empty string. The frontend will handle the congratulation message.
 
-### If fewer than 3 criteria pass AND overallScore >= 50 (guidanceType: "suggestion")
-
-Same rules as above — provide a fully rewritten version.
 
 ### If fewer than 3 criteria pass AND overallScore < 50 (guidanceType: "question")
 
