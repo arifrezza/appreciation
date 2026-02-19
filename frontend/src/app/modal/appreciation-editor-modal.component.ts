@@ -104,7 +104,7 @@ export class AppreciationEditorModalComponent
   dashOffset = this.circumference;
 
   private hasStartedTyping = false;
-  private readonly TYPING_DELAY = 1400;
+  private readonly TYPING_DELAY = 1700;
   private lastGeneratedFor = '';
   private lastMeaningfulText = '';
   private lastRewriteAtTickCount = -1;  // tracks which tick count last triggered a rewrite
@@ -343,7 +343,7 @@ export class AppreciationEditorModalComponent
   rewriteWithAI(): void {
 
     if (this.userText.trim().length < 50) return;
-
+    if (this.countAllPassed() === 5) return;
     this.isCheckingLanguage = true;
 
     const failingCriteria = this.guideItems
