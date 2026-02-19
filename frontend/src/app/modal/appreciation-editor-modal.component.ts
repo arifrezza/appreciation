@@ -96,7 +96,7 @@ export class AppreciationEditorModalComponent
   isCheckingLanguage = false;
 
   aiGuidance = '';
-  guidanceType: 'question' | 'suggestion' | 'none' | 'abusive' | '' = '';
+  guidanceType: 'question' | 'suggestion' | 'none' | 'abusive' | 'congratulation' | '' = '';
   showCongratulation = false;
 
   radius = 34;
@@ -195,9 +195,9 @@ export class AppreciationEditorModalComponent
     // abusive check
     if (language.abusive) {
       languageRule.status = 'error';
-      // Cascade: mark all other criteria as error and reset score to 0
+      // Reset all other criteria to neutral
       this.guideItems.forEach(item => {
-        if (item.label !== 'Abusive Check') item.status = 'error';
+        if (item.label !== 'Abusive Check') item.status = 'neutral';
       });
       this.animateScore(0);
       this.showAiSuggestion = false;
@@ -239,7 +239,7 @@ export class AppreciationEditorModalComponent
         this.showCongratulation = true;
         this.showAiSuggestion = false;
         this.aiGuidance = this.getRandomCongratulation();
-        this.guidanceType = 'suggestion';
+        this.guidanceType = 'congratulation';
       } else {
         // Tips/questions → show as guidance on the right
         this.showCongratulation = false;
@@ -325,7 +325,7 @@ export class AppreciationEditorModalComponent
           if (passedCount === 5) {
             this.showCongratulation = true;
             this.aiGuidance = this.getRandomCongratulation();
-            this.guidanceType = 'suggestion';
+            this.guidanceType = 'congratulation';
           } else {
             // ❗ Otherwise keep backend AI guidance
             this.showCongratulation = false;

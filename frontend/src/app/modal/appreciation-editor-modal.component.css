@@ -88,8 +88,8 @@
 }
 
 .main-text:focus {
-  border-color: #6d5dfc;
-  box-shadow: 0 0 0 3px rgba(109, 93, 252, 0.15);
+  border-color: #111827;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .char-count {
@@ -416,8 +416,13 @@
 }
 
 .guidance-label.suggestion {
+  color: #0891b2;
+  /* cyan — same as question, no special color for suggestion */
+}
+
+.guidance-label.congratulation {
   color: #7c3aed;
-  /* purple */
+  /* purple — only for congratulations */
 }
 
 .guidance-label.abusive {
@@ -594,7 +599,6 @@
 .guidance-label.thinking {
   color: #1565c0;
   background: rgba(21, 101, 192, 0.08);
-  animation: pulseGlow 1.5s infinite ease-in-out;
 }
 
 @keyframes pulseGlow {

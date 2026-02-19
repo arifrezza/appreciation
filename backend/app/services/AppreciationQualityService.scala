@@ -73,7 +73,7 @@ Identify the SINGLE weakest criterion (lowest score). Provide exactly ONE coachi
 
 Format: "[Question referencing their message that targets the weak criterion] Consider phrases such as: [phrase1], [phrase2], [phrase3], [phrase4]"
 
-IMPORTANT: Generate ONLY ONE tip for ONE criterion. Never combine tips.
+IMPORTANT: Generate ONLY ONE tip for ONE criterion. Never combine tips. Keep the tip SHORT — max 15 words before "Consider phrases such as:".
 
 ### If 2 or more criteria pass but NOT all 4 (guidanceType: "suggestion")
 
@@ -84,7 +84,7 @@ Identify the SINGLE weakest failing criterion (lowest score among the ones that 
 
 Format: "[Tip referencing their message that targets the weakest failing criterion] Consider phrases such as: [phrase1], [phrase2], [phrase3], [phrase4]"
 
-IMPORTANT: Generate ONLY ONE tip for ONE criterion. Never combine tips. Do NOT rewrite the full message here — that is handled separately.
+IMPORTANT: Generate ONLY ONE tip for ONE criterion. Never combine tips. Do NOT rewrite the full message here — that is handled separately. Keep the tip SHORT — max 15 words before "Consider phrases such as:".
 
 ### If all 4 criteria pass (guidanceType: "none")
 
@@ -100,7 +100,7 @@ Identify the SINGLE weakest criterion (lowest score). Provide exactly ONE coachi
 
 Format: "[Question referencing their message that targets the weak criterion] Consider phrases such as: [phrase1], [phrase2], [phrase3], [phrase4]"
 
-IMPORTANT: Generate ONLY ONE tip for ONE criterion. Never combine tips.
+IMPORTANT: Generate ONLY ONE tip for ONE criterion. Never combine tips. Keep the tip SHORT — max 15 words before "Consider phrases such as:".
 
 ## Response Format
 
