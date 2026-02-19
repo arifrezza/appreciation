@@ -196,6 +196,11 @@ const normalized = this.normalizeText(text);
 
     if (!qualityResult || !qualityResult.success) return;
 
+    // Hide AI suggestion box immediately when all criteria pass (don't wait for 300ms animation)
+    if (qualityResult.guidanceType === 'none') {
+      this.showAiSuggestion = false;
+    }
+
     this.updateGuideItemsWithDelay([
       { label: 'Be specific', pass: qualityResult.quality.beSpecific.pass },
       { label: 'Highlight impact', pass: qualityResult.quality.highlightImpact.pass },
@@ -302,6 +307,7 @@ const normalized = this.normalizeText(text);
               // ✅ Only show congratulation if ALL 5 pass (4 quality + Abusive Check)
               if (passedCount === 5) {
                 this.showCongratulation = true;
+                this.showAiSuggestion = false;
                 this.aiGuidance = this.getRandomCongratulation();
                 this.guidanceType = 'suggestion';
               } else {
