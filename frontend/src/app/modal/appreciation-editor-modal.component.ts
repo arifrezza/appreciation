@@ -327,6 +327,7 @@ const normalized = this.normalizeText(text);
   rewriteWithAI(): void {
 
     if (this.userText.trim().length < 50) return;
+    if (this.countAllPassed() === 5) return;
 
     this.isCheckingLanguage = true;
 
@@ -338,7 +339,7 @@ const normalized = this.normalizeText(text);
       .subscribe({
         next: (res) => {
           this.isCheckingLanguage = false;
-          if (res.success) {
+          if (res.success && this.countAllPassed() < 5) {
             this.aiText = res.rewrite;
             this.showAiSuggestion = true;
           }
