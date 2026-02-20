@@ -71,7 +71,6 @@ export class AppreciationEditorModalComponent
   }
 
   ngOnDestroy(): void {
-      console.log("DESTROY CALLED"); // 👈 add this
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -196,6 +195,11 @@ const normalized = this.normalizeText(text);
 
     if (!qualityResult || !qualityResult.success) return;
 
+    // If already showing congratulation, don't let a late-arriving response regress the UI
+    if (this.showCongratulation && this.countAllPassed() === 5) {
+      return;
+    }
+
     // Hide AI suggestion box immediately when all criteria pass (don't wait for 300ms animation)
     if (qualityResult.guidanceType === 'none') {
       this.showAiSuggestion = false;
@@ -216,6 +220,9 @@ const normalized = this.normalizeText(text);
           this.showAiSuggestion = false;
           this.aiGuidance = this.getRandomCongratulation();
           this.guidanceType = 'suggestion';
+        } else if (this.showCongratulation) {
+          // Already showing congratulation (all 5 passed earlier) — don't regress
+          return;
         } else if (qualityResult.guidanceType === 'suggestion') {
           // Backend returned a rewritten suggestion → show in AI suggestion box
           this.showCongratulation = false;
@@ -327,6 +334,7 @@ const normalized = this.normalizeText(text);
   rewriteWithAI(): void {
 
     if (this.userText.trim().length < 50) return;
+    if (this.countAllPassed() < 2) return;
     if (this.countAllPassed() === 5) return;
 
     this.isCheckingLanguage = true;
@@ -339,7 +347,7 @@ const normalized = this.normalizeText(text);
       .subscribe({
         next: (res) => {
           this.isCheckingLanguage = false;
-          if (res.success && this.countAllPassed() < 5) {
+          if (res.success && this.countAllPassed() < 5 && !this.showCongratulation) {
             this.aiText = res.rewrite;
             this.showAiSuggestion = true;
           }

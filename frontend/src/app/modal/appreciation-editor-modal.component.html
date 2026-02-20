@@ -31,7 +31,7 @@
 
         <button
                 class="rewrite-btn"
-                [disabled]="userText.length < 50 || countAllPassed() === 5"
+                [disabled]="userText.length < 50 || countAllPassed() < 2 || countAllPassed() === 5"
                 (click)="rewriteWithAI()"
         >
           ✨ Rewrite with AI
