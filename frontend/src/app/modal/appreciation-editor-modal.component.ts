@@ -177,7 +177,7 @@ export class AppreciationEditorModalComponent
 private countPassedCriteria(): number {
   return this.guideItems.filter(item => item.label !== 'Abusive Check' && item.status === 'success').length;
 }
-private countAllPassed(): number {
+countAllPassed(): number {
   return this.guideItems.filter(item => item.status === 'success').length;
 }
 
