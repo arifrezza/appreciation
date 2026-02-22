@@ -19,7 +19,7 @@
 
         <div class="textarea-wrapper">
           <div class="ghost-layer" *ngIf="ghostText">
-            <span class="ghost-hidden">{{ userText }}</span><span class="ghost-completion">{{ ghostText }}</span>
+            <span class="ghost-hidden">{{ userText }}</span><span class="ghost-completion">{{ displayGhostText }}</span>
           </div>
           <textarea
                   #mainTextarea

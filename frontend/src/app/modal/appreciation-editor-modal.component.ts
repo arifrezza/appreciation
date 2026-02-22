@@ -145,6 +145,7 @@ export class AppreciationEditorModalComponent
   private lastGeneratedFor = '';
   private lastMeaningfulText = '';
   private hasTriggeredRewrite = false;
+  private previousRawText = '';
 
 
   private phraseToCriterionMap: Record<string, string> = {};
@@ -182,6 +183,14 @@ countAllPassed(): number {
 }
 
 
+  get displayGhostText(): string {
+    if (!this.ghostText) return '';
+    if (!this.userText || this.userText.endsWith(' ') || this.ghostText.startsWith(' ')) {
+      return this.ghostText;
+    }
+    return ' ' + this.ghostText;
+  }
+
   /* =====================
      TEXT CHANGE
   ====================== */
@@ -190,8 +199,18 @@ countAllPassed(): number {
 
     const text = this.userText.trim();
 
-    // Dismiss any existing ghost text on new input
-    this.ghostText = '';
+    // Only dismiss ghost on alphanumeric characters, not spaces/punctuation
+    if (this.ghostText) {
+      if (this.userText.length <= this.previousRawText.length) {
+        this.ghostText = '';
+      } else {
+        const newChars = this.userText.substring(this.previousRawText.length);
+        if (/[a-zA-Z0-9]/.test(newChars)) {
+          this.ghostText = '';
+        }
+      }
+    }
+    this.previousRawText = this.userText;
 
     if (text.length === 0) {
       this.resetToInitialState();
@@ -440,6 +459,7 @@ countAllPassed(): number {
     this.lastGeneratedFor = '';
     this.lastMeaningfulText = '';
     this.hasTriggeredRewrite = false;
+    this.previousRawText = '';
     this.isCheckingLanguage = false;
     this.aiGuidance = '';
     this.guidanceType = '';
@@ -516,7 +536,7 @@ countAllPassed(): number {
   onKeydown(event: KeyboardEvent): void {
     if (event.key === 'Tab' && this.ghostText) {
       event.preventDefault();
-      this.userText += this.ghostText;
+      this.userText += this.displayGhostText;
       this.ghostText = '';
       this.onTextChange();
     }
