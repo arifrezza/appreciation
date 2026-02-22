@@ -277,6 +277,15 @@ countAllPassed(): number {
 
     languageRule.status = 'success';
 
+    // Re-trigger autocomplete after abusive status clears
+    const trimmedText = this.userText.trim();
+    const failingCount = this.guideItems.filter(
+      i => i.label !== 'Abusive Check' && i.status !== 'success'
+    ).length;
+    if (failingCount > 0 && trimmedText.length >= 10) {
+      this.autocompleteSubject.next(trimmedText);
+    }
+
     if (!qualityResult || !qualityResult.success) return;
 
     // If already showing congratulation, don't let a late-arriving response regress the UI
