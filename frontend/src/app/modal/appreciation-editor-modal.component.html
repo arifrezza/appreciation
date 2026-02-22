@@ -17,16 +17,24 @@
       <!-- ================= LEFT PANEL ================= -->
       <div class="left">
 
-        <textarea
-                #mainTextarea
-                class="main-text"
-                [(ngModel)]="userText"
-                (input)="onTextChange()"
-                autofocus
-        ></textarea>
+        <div class="textarea-wrapper">
+          <div class="ghost-layer" *ngIf="ghostText">
+            <span class="ghost-hidden">{{ userText }}</span><span class="ghost-completion">{{ ghostText }}</span>
+          </div>
+          <textarea
+                  #mainTextarea
+                  class="main-text"
+                  [(ngModel)]="userText"
+                  (input)="onTextChange()"
+                  (keydown)="onKeydown($event)"
+                  [class.has-ghost]="ghostText"
+                  autofocus
+          ></textarea>
+        </div>
 
-        <div class="char-count">
-          {{ userText.length }}
+        <div class="char-count-row">
+          <span class="ghost-hint" *ngIf="ghostText">Press <kbd>Tab</kbd> to accept</span>
+          <span class="char-count">{{ userText.length }}</span>
         </div>
 
         <button

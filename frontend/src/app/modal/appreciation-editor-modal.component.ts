@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 
 import { LanguageService, QualityResponse } from '../services/language.service';
-import { Subject, forkJoin } from 'rxjs';
+import { Subject, forkJoin, EMPTY } from 'rxjs';
 import { debounceTime, filter, switchMap, takeUntil } from 'rxjs/operators';
 
 type RuleStatus = 'neutral' | 'success' | 'error';
@@ -68,6 +68,43 @@ export class AppreciationEditorModalComponent
           this.isCheckingLanguage = false;
         }
       });
+
+    // Autocomplete ghost text stream
+    this.autocompleteSubject
+      .pipe(
+        debounceTime(500),
+        filter(() => this.countAllPassed() < 5 && !this.showCongratulation),
+        switchMap(text => {
+          const lowerText = text.toLowerCase();
+
+          const failingCriteria = this.guideItems
+            .filter(i => i.label !== 'Abusive Check' && i.status !== 'success')
+            .map(i => i.label);
+
+          if (failingCriteria.length === 0) return EMPTY;
+
+          // Trigger A: check if text contains a known suggested phrase
+          let targetCriterion: string | undefined;
+          for (const [phrase, criterion] of Object.entries(this.phraseToCriterionMap)) {
+            if (lowerText.includes(phrase)) {
+              targetCriterion = criterion;
+              break;
+            }
+          }
+
+          // Trigger B: no keyword match — targetCriterion stays undefined,
+          // backend picks the best-fitting failing criterion
+          return this.languageService.autocomplete(text, failingCriteria, targetCriterion);
+        }),
+        takeUntil(this.destroy$)
+      )
+      .subscribe({
+        next: (res) => {
+          if (res.success && res.completion) {
+            this.ghostText = res.completion;
+          }
+        }
+      });
   }
 
   ngOnDestroy(): void {
@@ -90,6 +127,7 @@ export class AppreciationEditorModalComponent
   userText = '';
   aiText = '';
   showAiSuggestion = false;
+  ghostText = '';
 
   score = 0;
   isCheckingLanguage = false;
@@ -109,8 +147,11 @@ export class AppreciationEditorModalComponent
   private hasTriggeredRewrite = false;
 
 
+  private phraseToCriterionMap: Record<string, string> = {};
+
   // ⭐ reactive streams
   private typingSubject = new Subject<string>();
+  private autocompleteSubject = new Subject<string>();
   private destroy$ = new Subject<void>();
 
   /* =====================
@@ -149,6 +190,9 @@ private countAllPassed(): number {
 
     const text = this.userText.trim();
 
+    // Dismiss any existing ghost text on new input
+    this.ghostText = '';
+
     if (text.length === 0) {
       this.resetToInitialState();
       return;
@@ -158,16 +202,24 @@ private countAllPassed(): number {
       this.hasStartedTyping = true;
     }
 
-const normalized = this.normalizeText(text);
+    const normalized = this.normalizeText(text);
 
-  if (normalized === this.lastMeaningfulText) {
-    return; // ❌ skip AI call
-  }
+    if (normalized === this.lastMeaningfulText) {
+      return;
+    }
 
-  this.lastMeaningfulText = normalized;
+    this.lastMeaningfulText = normalized;
 
-    // ⭐ push to reactive stream
+    // ⭐ push to quality check stream
     this.typingSubject.next(text);
+
+    // ⭐ push to autocomplete stream (if there are failing criteria)
+    const failingCount = this.guideItems.filter(
+      i => i.label !== 'Abusive Check' && i.status !== 'success'
+    ).length;
+    if (failingCount > 0 && text.length >= 10) {
+      this.autocompleteSubject.next(text);
+    }
   }
 
   /* =====================
@@ -236,6 +288,8 @@ const normalized = this.normalizeText(text);
           this.showAiSuggestion = false;
           this.guidanceType = qualityResult.guidanceType;
           this.aiGuidance = qualityResult.guidance;
+          // Extract suggested phrases and map them to their criterion
+          this.extractPhrases(qualityResult.guidance, qualityResult);
         }
     });
 
@@ -380,6 +434,7 @@ const normalized = this.normalizeText(text);
     this.userText = '';
     this.aiText = '';
     this.showAiSuggestion = false;
+    this.ghostText = '';
     this.score = 0;
     this.hasStartedTyping = false;
     this.lastGeneratedFor = '';
@@ -389,6 +444,7 @@ const normalized = this.normalizeText(text);
     this.aiGuidance = '';
     this.guidanceType = '';
     this.showCongratulation = false;
+    this.phraseToCriterionMap = {};
     this.updateProgress(0);
 
 
@@ -428,6 +484,42 @@ const normalized = this.normalizeText(text);
   private updateProgress(score: number): void {
     const percent = score / 100;
     this.dashOffset = this.circumference * (1 - percent);
+  }
+
+  /* =====================
+     AUTOCOMPLETE
+  ====================== */
+
+  private extractPhrases(guidance: string, qualityResult: QualityResponse): void {
+    const marker = 'Consider phrases such as:';
+    const idx = guidance.indexOf(marker);
+    if (idx === -1) return;
+
+    // Find which criterion this guidance targets (the weakest failing one)
+    const criteriaScores = [
+      { label: 'Be specific', score: qualityResult.quality.beSpecific.score, pass: qualityResult.quality.beSpecific.pass },
+      { label: 'Highlight impact', score: qualityResult.quality.highlightImpact.score, pass: qualityResult.quality.highlightImpact.pass },
+      { label: 'Acknowledge effort', score: qualityResult.quality.acknowledgeEffort.score, pass: qualityResult.quality.acknowledgeEffort.pass },
+      { label: 'Reinforce consistency', score: qualityResult.quality.reinforceConsistency.score, pass: qualityResult.quality.reinforceConsistency.pass }
+    ];
+    const weakest = criteriaScores.filter(c => !c.pass).sort((a, b) => a.score - b.score)[0];
+    const criterionLabel = weakest?.label || '';
+
+    // Map each phrase to the criterion it targets
+    const raw = guidance.substring(idx + marker.length);
+    const phrases = raw.split(',').map(p => p.trim().replace(/['"]/g, '').toLowerCase()).filter(p => p.length > 0);
+    phrases.forEach(phrase => {
+      this.phraseToCriterionMap[phrase] = criterionLabel;
+    });
+  }
+
+  onKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Tab' && this.ghostText) {
+      event.preventDefault();
+      this.userText += this.ghostText;
+      this.ghostText = '';
+      this.onTextChange();
+    }
   }
 
   /* =====================
