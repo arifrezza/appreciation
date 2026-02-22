@@ -440,7 +440,7 @@ countAllPassed(): number {
       });
     }
 
-  rewriteWithAI(): void {
+  rewriteWithAI(manual = false): void {
 
     if (this.userText.trim().length < 50) return;
 
@@ -454,7 +454,7 @@ countAllPassed(): number {
       .subscribe({
         next: (res) => {
           this.isCheckingLanguage = false;
-          if (res.success && this.countAllPassed() < 5 && !this.showCongratulation) {
+          if (res.success && (manual || (this.countAllPassed() < 5 && !this.showCongratulation))) {
             this.aiText = res.rewrite;
             this.showAiSuggestion = true;
           }

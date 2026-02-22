@@ -36,7 +36,7 @@
           <span class="char-count">{{ userText.length }}</span>
         </div>
 
-        <button class="rewrite-btn" [disabled]="userText.trim().length < 50 || guideItems[0].status === 'error'" (click)="rewriteWithAI()">
+        <button class="rewrite-btn" [disabled]="userText.trim().length < 50 || guideItems[0].status === 'error'" (click)="rewriteWithAI(true)">
           ✨ Rewrite with AI
         </button>
 
