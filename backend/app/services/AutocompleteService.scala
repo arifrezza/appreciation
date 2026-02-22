@@ -30,6 +30,9 @@ class AutocompleteService @Inject()(
 		val base =
 			"""You are an inline autocomplete engine for employee appreciation messages in a corporate platform.
 			  |You will receive the text the user has written so far.
+			  |
+			  |IMPORTANT: If the user's text contains abusive, offensive, inappropriate, or vulgar language, respond with EXACTLY an empty string. Do NOT complete abusive messages.
+			  |
 			  |Output ONLY the remaining words to naturally finish the current sentence.
 			  |Do NOT repeat any text the user has already written.
 			  |Keep it concise — one sentence fragment, no more than 20 words.
@@ -61,6 +64,19 @@ class AutocompleteService @Inject()(
 		}
 	}
 
+	private def isRefusalResponse(text: String): Boolean = {
+		val lower = text.toLowerCase
+		lower.startsWith("i'm sorry") ||
+			lower.startsWith("i cannot") ||
+			lower.startsWith("i can't") ||
+			lower.startsWith("sorry,") ||
+			lower.startsWith("i apologize") ||
+			lower.contains("cannot assist") ||
+			lower.contains("can't assist") ||
+			lower.contains("not appropriate") ||
+			lower.contains("inappropriate language")
+	}
+
 	def complete(text: String, failingCriteria: Seq[String], targetCriterion: Option[String]): Future[Either[String, String]] = {
 
 		val prompt = buildPrompt(failingCriteria, targetCriterion)
@@ -86,8 +102,9 @@ class AutocompleteService @Inject()(
 					val content =
 						(response.json \ "choices")(0) \ "message" \ "content"
 
-					content.asOpt[String] match {
-						case Some(completion) => Right(completion.trim)
+					content.asOpt[String].map(_.trim) match {
+						case Some(completion) if isRefusalResponse(completion) => Right("")
+						case Some(completion) => Right(completion)
 						case None => Left("No completion returned")
 					}
 				} else {

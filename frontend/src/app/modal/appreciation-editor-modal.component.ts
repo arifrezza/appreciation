@@ -73,7 +73,7 @@ export class AppreciationEditorModalComponent
     this.autocompleteSubject
       .pipe(
         debounceTime(500),
-        filter(() => this.countAllPassed() < 5 && !this.showCongratulation),
+        filter(() => this.countAllPassed() < 5 && !this.showCongratulation && this.guideItems[0].status !== 'error'),
         switchMap(text => {
           const lowerText = text.toLowerCase();
 
@@ -238,7 +238,7 @@ countAllPassed(): number {
     const failingCount = this.guideItems.filter(
       i => i.label !== 'Abusive Check' && i.status !== 'success'
     ).length;
-    if (failingCount > 0 && text.length >= 10) {
+    if (failingCount > 0 && text.length >= 10 && this.guideItems[0].status !== 'error') {
       this.autocompleteSubject.next(text);
     }
   }
@@ -267,6 +267,7 @@ countAllPassed(): number {
       });
       this.animateScore(0);
       this.showAiSuggestion = false;
+      this.ghostText = '';
       this.lastRewriteAtTickCount = -1;
       this.showCongratulation = false;
       this.aiGuidance = 'Your message contains inappropriate language. Please revise it before continuing.';
