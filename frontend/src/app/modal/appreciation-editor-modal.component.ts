@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 
 import { LanguageService, QualityResponse } from '../services/language.service';
-import { Subject, forkJoin } from 'rxjs';
+import { Subject, forkJoin, EMPTY } from 'rxjs';
 import { debounceTime, filter, switchMap, takeUntil } from 'rxjs/operators';
 
 type RuleStatus = 'neutral' | 'success' | 'error';
@@ -68,10 +68,47 @@ export class AppreciationEditorModalComponent
           this.isCheckingLanguage = false;
         }
       });
+
+    // Autocomplete ghost text stream
+    this.autocompleteSubject
+      .pipe(
+        debounceTime(500),
+        filter(() => this.countAllPassed() < 5 && !this.showCongratulation),
+        switchMap(text => {
+          const lowerText = text.toLowerCase();
+
+          const failingCriteria = this.guideItems
+            .filter(i => i.label !== 'Abusive Check' && i.status !== 'success')
+            .map(i => i.label);
+
+          if (failingCriteria.length === 0) return EMPTY;
+
+          // Trigger A: check if text contains a known suggested phrase
+          let targetCriterion: string | undefined;
+          for (const [phrase, criterion] of Object.entries(this.phraseToCriterionMap)) {
+            if (lowerText.includes(phrase)) {
+              targetCriterion = criterion;
+              break;
+            }
+          }
+
+          // Trigger B: no keyword match — targetCriterion stays undefined,
+          // backend picks the best-fitting failing criterion
+          return this.languageService.autocomplete(text, failingCriteria, targetCriterion);
+        }),
+        takeUntil(this.destroy$)
+      )
+      .subscribe({
+        next: (res) => {
+          if (res.success && res.completion) {
+            this.ghostText = res.completion;
+          }
+        }
+      });
   }
 
   ngOnDestroy(): void {
-    console.log("DESTROY CALLED"); // 👈 add this
+      console.log("DESTROY CALLED"); // 👈 add this
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -91,6 +128,7 @@ export class AppreciationEditorModalComponent
   userText = '';
   aiText = '';
   showAiSuggestion = false;
+  ghostText = '';
 
   score = 0;
   isCheckingLanguage = false;
@@ -104,14 +142,19 @@ export class AppreciationEditorModalComponent
   dashOffset = this.circumference;
 
   private hasStartedTyping = false;
-  private readonly TYPING_DELAY = 1500;
+  private readonly TYPING_DELAY = 1000;
   private lastGeneratedFor = '';
   private lastMeaningfulText = '';
+  private hasTriggeredRewrite = false;
+  private previousRawText = '';
   private lastRewriteAtTickCount = -1;  // tracks which tick count last triggered a rewrite
 
 
+  private phraseToCriterionMap: Record<string, string> = {};
+
   // ⭐ reactive streams
   private typingSubject = new Subject<string>();
+  private autocompleteSubject = new Subject<string>();
   private destroy$ = new Subject<void>();
 
   /* =====================
@@ -134,19 +177,21 @@ export class AppreciationEditorModalComponent
     { label: 'Reinforce consistency', status: 'neutral' as RuleStatus }
   ];
 
-  private countPassedCriteria(): number {
-    console.log("countPassedCriteria");
-    console.log(this.guideItems.filter(item => item.label !== 'Abusive Check' && item.status === 'success').length);
-    return this.guideItems.filter(item => item.label !== 'Abusive Check' && item.status === 'success').length;
+private countPassedCriteria(): number {
+  return this.guideItems.filter(item => item.label !== 'Abusive Check' && item.status === 'success').length;
+}
+countAllPassed(): number {
+  return this.guideItems.filter(item => item.status === 'success').length;
+}
 
+
+  get displayGhostText(): string {
+    if (!this.ghostText) return '';
+    if (!this.userText || this.userText.endsWith(' ') || this.ghostText.startsWith(' ')) {
+      return this.ghostText;
+    }
+    return ' ' + this.ghostText;
   }
-
-  //This gives no of Green Tick including Ausive Check
-  public countAllPassed(): number {
-    return this.guideItems.filter(item => item.status === 'success').length;
-
-  }
-
 
   /* =====================
      TEXT CHANGE
@@ -155,6 +200,19 @@ export class AppreciationEditorModalComponent
   onTextChange(): void {
 
     const text = this.userText.trim();
+
+    // Only dismiss ghost on alphanumeric characters, not spaces/punctuation
+    if (this.ghostText) {
+      if (this.userText.length <= this.previousRawText.length) {
+        this.ghostText = '';
+      } else {
+        const newChars = this.userText.substring(this.previousRawText.length);
+        if (/[a-zA-Z0-9]/.test(newChars)) {
+          this.ghostText = '';
+        }
+      }
+    }
+    this.previousRawText = this.userText;
 
     if (text.length === 0) {
       this.resetToInitialState();
@@ -168,13 +226,21 @@ export class AppreciationEditorModalComponent
     const normalized = this.normalizeText(text);
 
     if (normalized === this.lastMeaningfulText) {
-      return; // ❌ skip AI call
+      return;
     }
 
     this.lastMeaningfulText = normalized;
 
-    // ⭐ push to reactive stream
+    // ⭐ push to quality check stream
     this.typingSubject.next(text);
+
+    // ⭐ push to autocomplete stream (if there are failing criteria)
+    const failingCount = this.guideItems.filter(
+      i => i.label !== 'Abusive Check' && i.status !== 'success'
+    ).length;
+    if (failingCount > 0 && text.length >= 10) {
+      this.autocompleteSubject.next(text);
+    }
   }
 
   /* =====================
@@ -212,6 +278,16 @@ export class AppreciationEditorModalComponent
 
     if (!qualityResult || !qualityResult.success) return;
 
+    // If already showing congratulation, don't let a late-arriving response regress the UI
+    if (this.showCongratulation && this.countAllPassed() === 5) {
+      return;
+    }
+
+    // Hide AI suggestion box immediately when all criteria pass (don't wait for 300ms animation)
+    if (qualityResult.guidanceType === 'none') {
+      this.showAiSuggestion = false;
+    }
+
     this.updateGuideItemsWithDelay([
       { label: 'Be specific', pass: qualityResult.quality.beSpecific.pass },
       { label: 'Highlight impact', pass: qualityResult.quality.highlightImpact.pass },
@@ -220,32 +296,42 @@ export class AppreciationEditorModalComponent
     ], () => {
       this.animateScore(this.calculateWeightedScore());
       const totalPassed = this.countAllPassed();
+        if (totalPassed < 3) {
+                this.showAiSuggestion = false;
+                this.lastRewriteAtTickCount = -1;
+              }
 
-      // Hide AI suggestion if ticks drop below 3; reset so it re-triggers on recovery
-      if (totalPassed < 3) {
-        this.showAiSuggestion = false;
-        this.lastRewriteAtTickCount = -1;
-      }
+          if (totalPassed >= 3 && totalPassed !== this.lastRewriteAtTickCount) {
+                  this.lastRewriteAtTickCount = totalPassed;
+                  this.rewriteWithAI();
+                  // fall through — still update right panel guidance below
+                }
 
-      // Auto-trigger rewrite at 3+ ticks, and re-trigger whenever tick count increases
-      if (totalPassed >= 3 && totalPassed !== this.lastRewriteAtTickCount) {
-        this.lastRewriteAtTickCount = totalPassed;
-        this.rewriteWithAI();
-        // fall through — still update right panel guidance below
-      }
-
-      if (totalPassed === 5 || qualityResult.guidanceType === 'none') {
-        // All criteria passed → congratulations
-        this.showCongratulation = true;
-        this.showAiSuggestion = false;
-        this.aiGuidance = this.getRandomCongratulation();
-        this.guidanceType = 'congratulation';
-      } else {
-        // Tips/questions → show as guidance on the right
-        this.showCongratulation = false;
-        this.guidanceType = qualityResult.guidanceType;
-        this.aiGuidance = qualityResult.guidance;
-      }
+        if (totalPassed === 5 || qualityResult.guidanceType === 'none') {
+          // All criteria passed → congratulations
+          this.showCongratulation = true;
+          this.showAiSuggestion = false;
+          this.aiGuidance = this.getRandomCongratulation();
+          this.guidanceType = 'suggestion';
+        } else if (this.showCongratulation) {
+          // Already showing congratulation (all 5 passed earlier) — don't regress
+          return;
+        } else if (qualityResult.guidanceType === 'suggestion') {
+          // Backend returned a rewritten suggestion → show in AI suggestion box
+          this.showCongratulation = false;
+          this.showAiSuggestion = true;
+          this.aiText = qualityResult.guidance;
+          this.aiGuidance = qualityResult.guidance;
+          this.guidanceType = 'suggestion';
+        } else {
+          // Tips/questions → show as guidance on the right
+          this.showCongratulation = false;
+          this.showAiSuggestion = false;
+          this.guidanceType = qualityResult.guidanceType;
+          this.aiGuidance = qualityResult.guidance;
+          // Extract suggested phrases and map them to their criterion
+          this.extractPhrases(qualityResult.guidance, qualityResult);
+        }
     });
 
   }
@@ -321,30 +407,30 @@ export class AppreciationEditorModalComponent
           //this.guidanceType = 'suggestion';
           const passedCount = this.countAllPassed();
 
-          // ✅ Only show congratulation if ALL 5 pass (4 quality + Abusive Check)
-          if (passedCount === 5) {
-            this.showCongratulation = true;
-            this.aiGuidance = this.getRandomCongratulation();
-            this.guidanceType = 'congratulation';
-          } else {
-            // ❗ Otherwise keep backend AI guidance
-            this.showCongratulation = false;
-            this.guidanceType = res.guidanceType;
-            this.aiGuidance = res.guidance;
-          }
-        });
-      },
-      error: () => {
-        this.isCheckingLanguage = false;
-      }
-    });
-  }
+              // ✅ Only show congratulation if ALL 5 pass (4 quality + Abusive Check)
+              if (passedCount === 5) {
+                this.showCongratulation = true;
+                this.showAiSuggestion = false;
+                this.aiGuidance = this.getRandomCongratulation();
+                this.guidanceType = 'congratulation';
+              } else {
+                // ❗ Otherwise keep backend AI guidance
+                this.showCongratulation = false;
+                this.guidanceType = res.guidanceType;
+                this.aiGuidance = res.guidance;
+              }
+          });
+        },
+        error: () => {
+          this.isCheckingLanguage = false;
+        }
+      });
+    }
 
   rewriteWithAI(): void {
 
     if (this.userText.trim().length < 50) return;
-    //if (this.countAllPassed() < 2) return;
-    //if (this.countAllPassed() === 5) return;
+
     this.isCheckingLanguage = true;
 
     const failingCriteria = this.guideItems
@@ -355,7 +441,7 @@ export class AppreciationEditorModalComponent
       .subscribe({
         next: (res) => {
           this.isCheckingLanguage = false;
-          if (res.success) {
+          if (res.success && this.countAllPassed() < 5 && !this.showCongratulation) {
             this.aiText = res.rewrite;
             this.showAiSuggestion = true;
           }
@@ -388,15 +474,19 @@ export class AppreciationEditorModalComponent
     this.userText = '';
     this.aiText = '';
     this.showAiSuggestion = false;
+    this.ghostText = '';
     this.score = 0;
     this.hasStartedTyping = false;
     this.lastGeneratedFor = '';
     this.lastMeaningfulText = '';
+    this.hasTriggeredRewrite = false;
+    this.previousRawText = '';
     this.lastRewriteAtTickCount = -1;
     this.isCheckingLanguage = false;
     this.aiGuidance = '';
     this.guidanceType = '';
     this.showCongratulation = false;
+    this.phraseToCriterionMap = {};
     this.updateProgress(0);
 
 
@@ -436,6 +526,42 @@ export class AppreciationEditorModalComponent
   private updateProgress(score: number): void {
     const percent = score / 100;
     this.dashOffset = this.circumference * (1 - percent);
+  }
+
+  /* =====================
+     AUTOCOMPLETE
+  ====================== */
+
+  private extractPhrases(guidance: string, qualityResult: QualityResponse): void {
+    const marker = 'Consider phrases such as:';
+    const idx = guidance.indexOf(marker);
+    if (idx === -1) return;
+
+    // Find which criterion this guidance targets (the weakest failing one)
+    const criteriaScores = [
+      { label: 'Be specific', score: qualityResult.quality.beSpecific.score, pass: qualityResult.quality.beSpecific.pass },
+      { label: 'Highlight impact', score: qualityResult.quality.highlightImpact.score, pass: qualityResult.quality.highlightImpact.pass },
+      { label: 'Acknowledge effort', score: qualityResult.quality.acknowledgeEffort.score, pass: qualityResult.quality.acknowledgeEffort.pass },
+      { label: 'Reinforce consistency', score: qualityResult.quality.reinforceConsistency.score, pass: qualityResult.quality.reinforceConsistency.pass }
+    ];
+    const weakest = criteriaScores.filter(c => !c.pass).sort((a, b) => a.score - b.score)[0];
+    const criterionLabel = weakest?.label || '';
+
+    // Map each phrase to the criterion it targets
+    const raw = guidance.substring(idx + marker.length);
+    const phrases = raw.split(',').map(p => p.trim().replace(/['"]/g, '').toLowerCase()).filter(p => p.length > 0);
+    phrases.forEach(phrase => {
+      this.phraseToCriterionMap[phrase] = criterionLabel;
+    });
+  }
+
+  onKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Tab' && this.ghostText) {
+      event.preventDefault();
+      this.userText += this.displayGhostText;
+      this.ghostText = '';
+      this.onTextChange();
+    }
   }
 
   /* =====================

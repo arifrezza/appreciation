@@ -47,5 +47,18 @@ rewriteAppreciation(text: string, failingCriteria: string[]) {
   );
 }
 
+autocomplete(
+  text: string,
+  failingCriteria: string[],
+  targetCriterion?: string
+): Observable<{ success: boolean; completion: string }> {
+  const body: any = { text, failingCriteria };
+  if (targetCriterion) {
+    body.targetCriterion = targetCriterion;
+  }
+  return this.http.post<{ success: boolean; completion: string }>(
+    '/api/autocomplete', body
+  );
+}
 
 }

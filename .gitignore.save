@@ -1,0 +1,25 @@
+# Backend (Scala/sbt)
+backend/target/
+backend/project/target/
+backend/project/project/
+
+# Frontend (Angular)
+frontend/.angular/
+frontend/node_modules/
+frontend/dist/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Claude Code
+.claude/
+
