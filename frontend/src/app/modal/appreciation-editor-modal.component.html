@@ -19,7 +19,7 @@
 
         <div class="textarea-wrapper">
           <div class="ghost-layer" *ngIf="ghostText">
-            <span class="ghost-hidden">{{ userText }}</span><span class="ghost-completion">{{ displayGhostText }}</span>
+            <span class="ghost-hidden">{{ userText }}</span><span class="ghost-completion">{{ displayGhostText }}</span><span class="ghost-hint-inline"> Press Tab ↹</span>
           </div>
           <textarea
                   #mainTextarea
@@ -33,7 +33,6 @@
         </div>
 
         <div class="char-count-row">
-          <span class="ghost-hint" *ngIf="ghostText">Press <kbd>Tab</kbd> to accept</span>
           <span class="char-count">{{ userText.length }}</span>
         </div>
 

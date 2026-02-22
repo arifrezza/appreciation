@@ -124,6 +124,21 @@
   opacity: 0.7;
 }
 
+.ghost-hint-inline {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #6366f1;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 4px;
+  vertical-align: middle;
+  animation: fadeIn 0.3s ease;
+  pointer-events: none;
+}
+
 .main-text.has-ghost {
   background: transparent;
 }
@@ -141,20 +156,6 @@
   margin-left: auto;
 }
 
-.ghost-hint {
-  font-size: 11px;
-  color: #9ca3af;
-  animation: fadeIn 0.3s ease;
-}
-
-.ghost-hint kbd {
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
-  border-radius: 3px;
-  padding: 1px 5px;
-  font-size: 11px;
-  font-family: inherit;
-}
 
 @keyframes fadeIn {
   from { opacity: 0; }
