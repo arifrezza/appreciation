@@ -104,7 +104,7 @@ export class AppreciationEditorModalComponent
   dashOffset = this.circumference;
 
   private hasStartedTyping = false;
-  private readonly TYPING_DELAY = 1700;
+  private readonly TYPING_DELAY = 1500;
   private lastGeneratedFor = '';
   private lastMeaningfulText = '';
   private lastRewriteAtTickCount = -1;  // tracks which tick count last triggered a rewrite
@@ -142,7 +142,7 @@ export class AppreciationEditorModalComponent
   }
 
   //This gives no of Green Tick including Ausive Check
-  private countAllPassed(): number {
+  public countAllPassed(): number {
     return this.guideItems.filter(item => item.status === 'success').length;
 
   }
@@ -343,7 +343,8 @@ export class AppreciationEditorModalComponent
   rewriteWithAI(): void {
 
     if (this.userText.trim().length < 50) return;
-    if (this.countAllPassed() === 5) return;
+    //if (this.countAllPassed() < 2) return;
+    //if (this.countAllPassed() === 5) return;
     this.isCheckingLanguage = true;
 
     const failingCriteria = this.guideItems

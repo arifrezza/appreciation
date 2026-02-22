@@ -23,7 +23,7 @@
           {{ userText.length }}
         </div>
 
-        <button class="rewrite-btn" [disabled]="userText.length < 50 || guideItems[0].status === 'error'" (click)="rewriteWithAI()">
+        <button class="rewrite-btn" [disabled]="userText.trim().length < 50 || guideItems[0].status === 'error'" (click)="rewriteWithAI()">
           ✨ Rewrite with AI
         </button>
 
