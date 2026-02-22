@@ -275,15 +275,18 @@ countAllPassed(): number {
       return;
     }
 
+    const wasAbusive = languageRule.status === 'error';
     languageRule.status = 'success';
 
-    // Re-trigger autocomplete after abusive status clears
-    const trimmedText = this.userText.trim();
-    const failingCount = this.guideItems.filter(
-      i => i.label !== 'Abusive Check' && i.status !== 'success'
-    ).length;
-    if (failingCount > 0 && trimmedText.length >= 10) {
-      this.autocompleteSubject.next(trimmedText);
+    // Re-trigger autocomplete only when recovering from abusive status
+    if (wasAbusive) {
+      const trimmedText = this.userText.trim();
+      const failingCount = this.guideItems.filter(
+        i => i.label !== 'Abusive Check' && i.status !== 'success'
+      ).length;
+      if (failingCount > 0 && trimmedText.length >= 10) {
+        this.autocompleteSubject.next(trimmedText);
+      }
     }
 
     if (!qualityResult || !qualityResult.success) return;
