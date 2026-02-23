@@ -270,26 +270,26 @@
   flex: 1;
   overflow-y: auto;
   min-height: 0;
-  padding: 10px 0;
+  padding: 6px 0;
 }
 
 .score-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .score-top {
   display: flex;
-  gap: 14px;
+  gap: 10px;
   align-items: flex-start;
 }
 
 .score-top-left {
   flex-shrink: 0;
-  padding: 8px;
-  margin-left: 21px;
+  padding: 4px;
+  margin-left: 10px;
 }
 
 .score-top-right {
@@ -298,7 +298,7 @@
 }
 
 .score-bottom {
-  padding: 12px 14px;
+  padding: 8px 12px;
   background: #f0f9ff;
   border: 1px solid #bae6fd;
   border-radius: 10px;
@@ -310,8 +310,8 @@
 
 .circle-wrapper {
   position: relative;
-  width: 80px;
-  height: 80px;
+  width: 64px;
+  height: 64px;
   overflow: visible;
 }
 
@@ -351,8 +351,8 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   transform: translate(-50%, -50%);
   border-radius: 50%;
 
@@ -362,7 +362,7 @@
   align-items: center;
   justify-content: center;
 
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
 
   transition: width 0.4s ease, height 0.4s ease, font-size 0.4s ease, box-shadow 0.4s ease, background 0.4s ease;
@@ -370,9 +370,9 @@
 
 .score-value.thinking {
   animation: thinkingPulse 1.4s ease-in-out infinite, shake 0.5s ease-in-out infinite;
-  width: 90px;
-  height: 90px;
-  font-size: 22px;
+  width: 72px;
+  height: 72px;
+  font-size: 18px;
 }
 
 @keyframes shake {
@@ -496,7 +496,7 @@
 }
 
 .guidance-text {
-  font-size: 15px;
+  font-size: 13px;
   line-height: 1.5;
   color: #374151;
   word-wrap: break-word;
@@ -521,9 +521,9 @@
 
 /* GUIDE SECTION */
 .guide-title {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 
 .guide-title-wrapper {
@@ -537,11 +537,11 @@
 .guide-item {
   display: flex;
   justify-content: space-between;
-  padding: 12px 14px;
+  padding: 9px 12px;
   border-radius: 10px;
   border: 1px solid #e5e7eb;
-  font-size: 14px;
-  margin-bottom: 10px;
+  font-size: 12.5px;
+  margin-bottom: 6px;
   flex-shrink: 0;
   /*transition: background-color 0.6s ease, border-color 0.6s ease, color 0.6s ease, transform 0.3s ease;*/
   transition: none;
