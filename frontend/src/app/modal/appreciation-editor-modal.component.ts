@@ -314,11 +314,11 @@ countAllPassed(): number {
                 this.lastRewriteAtTickCount = -1;
               }
 
-          if (totalPassed >= 3 && totalPassed !== this.lastRewriteAtTickCount) {
+          /*if (totalPassed >= 3 && totalPassed !== this.lastRewriteAtTickCount) {
                   this.lastRewriteAtTickCount = totalPassed;
                   this.rewriteWithAI();
                   // fall through — still update right panel guidance below
-                }
+                }*/
 
         if (totalPassed === 5 || qualityResult.guidanceType === 'none') {
           // All criteria passed → congratulations
