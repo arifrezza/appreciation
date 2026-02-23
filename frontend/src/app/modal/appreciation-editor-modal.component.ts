@@ -100,7 +100,7 @@ export class AppreciationEditorModalComponent
       )
       .subscribe({
         next: (res) => {
-          if (res.success && res.completion) {
+          if (res.success && res.completion && !this.showCongratulation) {
             this.ghostText = res.completion;
           }
         }
@@ -320,15 +320,25 @@ countAllPassed(): number {
                   // fall through — still update right panel guidance below
                 }*/
 
+        // If criteria regressed from 5, exit congratulation so autocomplete can resume
+        if (this.showCongratulation && totalPassed < 5) {
+          this.showCongratulation = false;
+          const trimmedText = this.userText.trim();
+          const failingCount = this.guideItems.filter(
+            i => i.label !== 'Abusive Check' && i.status !== 'success'
+          ).length;
+          if (failingCount > 0 && trimmedText.length >= 10) {
+            this.autocompleteSubject.next(trimmedText);
+          }
+        }
+
         if (totalPassed === 5 || qualityResult.guidanceType === 'none') {
           // All criteria passed → congratulations
           this.showCongratulation = true;
           this.showAiSuggestion = false;
+          this.ghostText = '';
           this.aiGuidance = this.getRandomCongratulation();
           this.guidanceType = 'suggestion';
-        } else if (this.showCongratulation) {
-          // Already showing congratulation (all 5 passed earlier) — don't regress
-          return;
         } else if (qualityResult.guidanceType === 'suggestion') {
           // Backend returned a rewritten suggestion → show in AI suggestion box
           this.showCongratulation = false;
