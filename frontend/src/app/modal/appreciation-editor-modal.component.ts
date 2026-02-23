@@ -337,7 +337,7 @@ countAllPassed(): number {
         } else if (qualityResult.guidanceType === 'suggestion') {
           // Backend returned a rewritten suggestion → show in AI suggestion box
           this.showCongratulation = false;
-          this.showAiSuggestion = true;
+          //this.showAiSuggestion = true;
           this.aiText = qualityResult.guidance;
           this.aiGuidance = qualityResult.guidance;
           this.guidanceType = 'suggestion';
