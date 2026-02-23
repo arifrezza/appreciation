@@ -291,11 +291,6 @@ countAllPassed(): number {
 
     if (!qualityResult || !qualityResult.success) return;
 
-    // If already showing congratulation, don't let a late-arriving response regress the UI
-    if (this.showCongratulation && this.countAllPassed() === 5) {
-      return;
-    }
-
     // Hide AI suggestion box immediately when all criteria pass (don't wait for 300ms animation)
     if (qualityResult.guidanceType === 'none') {
       this.showAiSuggestion = false;
