@@ -82,13 +82,13 @@
               <div class="score-top-left">
                 <div class="circle-wrapper">
 
-                  <svg class="progress-ring" width="80" height="80">
+                  <svg class="progress-ring" width="64" height="64">
                     <!-- Background -->
-                    <circle class="ring-bg" cx="40" cy="40" r="34">
+                    <circle class="ring-bg" cx="32" cy="32" r="27">
                     </circle>
 
                     <!-- Progress -->
-                    <circle class="ring-progress" cx="40" cy="40" r="34" [attr.stroke-dasharray]="circumference"
+                    <circle class="ring-progress" cx="32" cy="32" r="27" [attr.stroke-dasharray]="circumference"
                       [attr.stroke-dashoffset]="dashOffset" [ngClass]="[
                       scoreClass,
                       isCheckingLanguage ? 'checking' : ''

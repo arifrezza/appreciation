@@ -137,7 +137,7 @@ export class AppreciationEditorModalComponent
   guidanceType: 'question' | 'suggestion' | 'none' | 'abusive' | 'congratulation' | '' = '';
   showCongratulation = false;
 
-  radius = 34;
+  radius = 27;
   circumference = 2 * Math.PI * this.radius;
   dashOffset = this.circumference;
 
