@@ -124,7 +124,7 @@ Respond with ONLY this JSON object. No markdown fencing, no explanation, no text
         )
       ),
       "temperature" -> 0.2,
-      "max_tokens" -> 600,
+      "max_tokens" -> 120,
       "response_format" -> Json.obj("type" -> "json_object")
     )
 

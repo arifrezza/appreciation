@@ -72,7 +72,7 @@ export class AppreciationEditorModalComponent
     // Autocomplete ghost text stream
     this.autocompleteSubject
       .pipe(
-        debounceTime(500),
+        debounceTime(400),
         filter(() => this.countAllPassed() < 5 && !this.showCongratulation && this.guideItems[0].status !== 'error'),
         switchMap(text => {
           const lowerText = text.toLowerCase();
