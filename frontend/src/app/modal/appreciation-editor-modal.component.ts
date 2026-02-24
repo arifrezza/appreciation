@@ -9,7 +9,7 @@ import {
   OnDestroy
 } from '@angular/core';
 
-import { LanguageService, QualityResponse } from '../services/language.service';
+import { LanguageService, QualityResponse, SpellCorrection } from '../services/language.service';
 import { Subject, forkJoin, EMPTY } from 'rxjs';
 import { debounceTime, filter, switchMap, takeUntil } from 'rxjs/operators';
 
@@ -100,8 +100,12 @@ export class AppreciationEditorModalComponent
       )
       .subscribe({
         next: (res) => {
-          if (res.success && res.completion && !this.showCongratulation) {
-            this.ghostText = res.completion;
+          if (res.success && !this.showCongratulation) {
+            if (res.completion) {
+              this.ghostText = res.completion;
+            }
+            this.spellCorrections = (res.corrections || [])
+              .filter(c => !this.ignoredWords.has(c.wrong.toLowerCase()));
           }
         }
       });
@@ -129,6 +133,8 @@ export class AppreciationEditorModalComponent
   aiText = '';
   showAiSuggestion = false;
   ghostText = '';
+  spellCorrections: SpellCorrection[] = [];
+  private ignoredWords: Set<string> = new Set();
 
   score = 0;
   isCheckingLanguage = false;
@@ -205,10 +211,12 @@ countAllPassed(): number {
     if (this.ghostText) {
       if (this.userText.length <= this.previousRawText.length) {
         this.ghostText = '';
+        this.spellCorrections = [];
       } else {
         const newChars = this.userText.substring(this.previousRawText.length);
         if (/[a-zA-Z0-9]/.test(newChars)) {
           this.ghostText = '';
+          this.spellCorrections = [];
         }
       }
     }
@@ -268,6 +276,7 @@ countAllPassed(): number {
       this.animateScore(0);
       this.showAiSuggestion = false;
       this.ghostText = '';
+      this.spellCorrections = [];
       this.lastRewriteAtTickCount = -1;
       this.showCongratulation = false;
       this.aiGuidance = 'Your message contains inappropriate language. Please revise it before continuing.';
@@ -493,6 +502,8 @@ countAllPassed(): number {
     this.aiText = '';
     this.showAiSuggestion = false;
     this.ghostText = '';
+    this.spellCorrections = [];
+    this.ignoredWords.clear();
     this.score = 0;
     this.hasStartedTyping = false;
     this.lastGeneratedFor = '';
@@ -573,11 +584,61 @@ countAllPassed(): number {
     });
   }
 
+  get activeCorrections(): SpellCorrection[] {
+    const lower = this.userText.toLowerCase();
+    return this.spellCorrections
+      .filter(c => lower.includes(c.wrong.toLowerCase()));
+  }
+
+  acceptCorrection(correction: SpellCorrection): void {
+    const regex = new RegExp(this.escapeRegex(correction.wrong), 'i');
+    this.userText = this.userText.replace(regex, correction.fixed);
+    this.spellCorrections = this.spellCorrections
+      .filter(c => c.wrong !== correction.wrong);
+    this.previousRawText = this.userText;
+    this.onTextChange();
+  }
+
+  acceptAllCorrections(): void {
+    for (const c of this.activeCorrections) {
+      const regex = new RegExp(this.escapeRegex(c.wrong), 'gi');
+      this.userText = this.userText.replace(regex, c.fixed);
+    }
+    this.spellCorrections = [];
+    this.previousRawText = this.userText;
+    this.onTextChange();
+  }
+
+  dismissCorrection(correction: SpellCorrection): void {
+    this.ignoredWords.add(correction.wrong.toLowerCase());
+    this.spellCorrections = this.spellCorrections
+      .filter(c => c.wrong !== correction.wrong);
+  }
+
+  dismissAllCorrections(): void {
+    this.activeCorrections.forEach(c =>
+      this.ignoredWords.add(c.wrong.toLowerCase())
+    );
+    this.spellCorrections = [];
+  }
+
+  private escapeRegex(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
   onKeydown(event: KeyboardEvent): void {
     if (event.key === 'Tab' && this.ghostText) {
       event.preventDefault();
+      // Apply spelling corrections first
+      for (const c of this.activeCorrections) {
+        const regex = new RegExp(this.escapeRegex(c.wrong), 'gi');
+        this.userText = this.userText.replace(regex, c.fixed);
+      }
+      this.spellCorrections = [];
+      // Then append ghost text
       this.userText += this.displayGhostText;
       this.ghostText = '';
+      this.previousRawText = this.userText;
       this.onTextChange();
     }
   }

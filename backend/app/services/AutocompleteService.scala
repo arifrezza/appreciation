@@ -28,15 +28,22 @@ class AutocompleteService @Inject()(
 
 	private def buildPrompt(failingCriteria: Seq[String], targetCriterion: Option[String]): String = {
 		val base =
-			"""You are an inline autocomplete engine for employee appreciation messages in a corporate platform.
+			"""You are an inline autocomplete engine AND spellchecker for employee appreciation messages in a corporate platform.
 			  |You will receive the text the user has written so far.
 			  |
-			  |IMPORTANT: If the user's text contains abusive, offensive, inappropriate, or vulgar language, respond with EXACTLY an empty string. Do NOT complete abusive messages.
+			  |IMPORTANT: If the user's text contains abusive, offensive, inappropriate, or vulgar language, respond with EXACTLY: {"completion":"","corrections":[]}
 			  |
-			  |Output ONLY the remaining words to naturally finish the current sentence.
-			  |Do NOT repeat any text the user has already written.
-			  |Keep it concise — one sentence fragment, no more than 20 words.
-			  |Do NOT add quotes, explanations, or labels. Just the raw completion text.""".stripMargin
+			  |Return a JSON object with two fields:
+			  |1. "completion": the remaining words to naturally finish the current sentence. Do NOT repeat any text the user has already written. Keep it concise — one sentence fragment, no more than 20 words.
+			  |2. "corrections": an array of objects with "wrong" (misspelled word as it appears) and "fixed" (corrected word) for any misspelled words in the user's text.
+			  |
+			  |Rules for corrections:
+			  |- Only flag genuinely misspelled words
+			  |- Do NOT correct proper nouns, names, abbreviations, or acronyms
+			  |- Do NOT correct informal but valid phrasing (e.g., "gonna", "wanna")
+			  |- If no typos exist, return an empty array for corrections
+			  |
+			  |Return ONLY the raw JSON object. No markdown fencing, no explanation, no labels.""".stripMargin
 
 		targetCriterion match {
 			case Some(criterion) =>
@@ -77,7 +84,26 @@ class AutocompleteService @Inject()(
 			lower.contains("inappropriate language")
 	}
 
-	def complete(text: String, failingCriteria: Seq[String], targetCriterion: Option[String]): Future[Either[String, String]] = {
+	case class SpellCorrection(wrong: String, fixed: String)
+	case class AutocompleteResult(completion: String, corrections: Seq[SpellCorrection])
+
+	implicit val spellCorrectionReads: Reads[SpellCorrection] = Json.reads[SpellCorrection]
+	implicit val spellCorrectionWrites: Writes[SpellCorrection] = Json.writes[SpellCorrection]
+
+	private def parseAutocompleteResponse(raw: String): AutocompleteResult = {
+		try {
+			val json = Json.parse(raw)
+			val completion = (json \ "completion").asOpt[String].getOrElse("").trim
+			val corrections = (json \ "corrections").asOpt[Seq[SpellCorrection]].getOrElse(Seq.empty)
+			AutocompleteResult(completion, corrections)
+		} catch {
+			case _: Exception =>
+				// Fallback: treat entire response as plain-text completion (backwards compatible)
+				AutocompleteResult(raw.trim, Seq.empty)
+		}
+	}
+
+	def complete(text: String, failingCriteria: Seq[String], targetCriterion: Option[String]): Future[Either[String, AutocompleteResult]] = {
 
 		val prompt = buildPrompt(failingCriteria, targetCriterion)
 
@@ -88,7 +114,7 @@ class AutocompleteService @Inject()(
 				Json.obj("role" -> "user", "content" -> text)
 			),
 			"temperature" -> 0.3,
-			"max_tokens" -> 60
+			"max_tokens" -> 120
 		)
 
 		ws.url(openAiUrl)
@@ -103,8 +129,10 @@ class AutocompleteService @Inject()(
 						(response.json \ "choices")(0) \ "message" \ "content"
 
 					content.asOpt[String].map(_.trim) match {
-						case Some(completion) if isRefusalResponse(completion) => Right("")
-						case Some(completion) => Right(completion)
+						case Some(raw) if isRefusalResponse(raw) =>
+							Right(AutocompleteResult("", Seq.empty))
+						case Some(raw) =>
+							Right(parseAutocompleteResponse(raw))
 						case None => Left("No completion returned")
 					}
 				} else {

@@ -32,6 +32,24 @@
           ></textarea>
         </div>
 
+        <!-- Spell correction chip bar -->
+        <div class="spell-bar" *ngIf="activeCorrections.length > 0">
+          <span class="spell-bar-label">Typo fixes:</span>
+          <div class="spell-chips">
+            <div class="spell-chip" *ngFor="let c of activeCorrections">
+              <span class="spell-wrong">{{ c.wrong }}</span>
+              <span class="spell-arrow">&rarr;</span>
+              <span class="spell-fixed">{{ c.fixed }}</span>
+              <button class="spell-accept" (click)="acceptCorrection(c)" title="Accept correction">&check;</button>
+              <button class="spell-dismiss" (click)="dismissCorrection(c)" title="Ignore this word">&times;</button>
+            </div>
+          </div>
+          <div class="spell-bulk" *ngIf="activeCorrections.length >= 2">
+            <button class="spell-accept-all" (click)="acceptAllCorrections()">Fix all</button>
+            <button class="spell-dismiss-all" (click)="dismissAllCorrections()">Ignore all</button>
+          </div>
+        </div>
+
         <div class="char-count-row">
           <span class="char-count">{{ userText.length }}</span>
         </div>

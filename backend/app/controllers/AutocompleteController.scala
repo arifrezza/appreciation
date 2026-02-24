@@ -47,10 +47,11 @@ class AutocompleteController @Inject()(
 
 			case Some(text) =>
 				autocompleteService.complete(text, failingCriteria, targetCriterion).map {
-					case Right(completion) =>
+					case Right(result) =>
 						Ok(Json.obj(
 							"success" -> true,
-							"completion" -> completion
+							"completion" -> result.completion,
+							"corrections" -> Json.toJson(result.corrections)(Writes.seq(autocompleteService.spellCorrectionWrites))
 						))
 
 					case Left(error) =>

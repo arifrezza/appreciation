@@ -143,6 +143,131 @@
   background: transparent;
 }
 
+/* Spell correction chip bar */
+.spell-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  animation: fadeIn 0.3s ease;
+}
+
+.spell-bar-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #92400e;
+  white-space: nowrap;
+}
+
+.spell-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.spell-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  font-size: 12px;
+}
+
+.spell-wrong {
+  color: #dc2626;
+  text-decoration: line-through;
+  font-weight: 500;
+}
+
+.spell-arrow {
+  color: #9ca3af;
+  font-size: 11px;
+}
+
+.spell-fixed {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.spell-accept,
+.spell-dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 0;
+  line-height: 1;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.spell-accept {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.spell-accept:hover {
+  background: #bbf7d0;
+  transform: scale(1.1);
+}
+
+.spell-dismiss {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.spell-dismiss:hover {
+  background: #e5e7eb;
+  transform: scale(1.1);
+}
+
+.spell-bulk {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.spell-accept-all,
+.spell-dismiss-all {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+}
+
+.spell-accept-all {
+  color: #16a34a;
+}
+
+.spell-accept-all:hover {
+  background: #dcfce7;
+}
+
+.spell-dismiss-all {
+  color: #6b7280;
+}
+
+.spell-dismiss-all:hover {
+  background: #f3f4f6;
+}
+
 .char-count-row {
   display: flex;
   justify-content: space-between;

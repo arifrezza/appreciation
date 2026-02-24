@@ -2,6 +2,11 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
+export interface SpellCorrection {
+  wrong: string;
+  fixed: string;
+}
+
 export interface CriterionResult {
   score: number;
   pass: boolean;
@@ -51,12 +56,12 @@ autocomplete(
   text: string,
   failingCriteria: string[],
   targetCriterion?: string
-): Observable<{ success: boolean; completion: string }> {
+): Observable<{ success: boolean; completion: string; corrections: SpellCorrection[] }> {
   const body: any = { text, failingCriteria };
   if (targetCriterion) {
     body.targetCriterion = targetCriterion;
   }
-  return this.http.post<{ success: boolean; completion: string }>(
+  return this.http.post<{ success: boolean; completion: string; corrections: SpellCorrection[] }>(
     '/api/autocomplete', body
   );
 }
