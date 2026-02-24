@@ -173,6 +173,17 @@
   cursor: pointer;
 }
 
+.rewrite-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(109, 93, 252, 0.35);
+  filter: brightness(0.95);
+}
+
+.rewrite-btn:active:not(:disabled) {
+  transform: translateY(0px);
+  box-shadow: 0 4px 12px rgba(109, 93, 252, 0.25);
+}
+
 .rewrite-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
