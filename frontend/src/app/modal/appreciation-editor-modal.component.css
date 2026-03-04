@@ -90,7 +90,8 @@
 }
 
 :host ::ng-deep .ql-editor {
-  height: 220px;
+  min-height: 220px;
+  max-height: 220px;
   overflow-y: auto;
   font-size: 16px;
   line-height: 1.6;
