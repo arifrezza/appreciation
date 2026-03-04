@@ -93,6 +93,15 @@
   margin-right: 0;
 }
 
+:host ::ng-deep .ql-toolbar .ql-color-picker .ql-color-label {
+  opacity: 1 !important;
+}
+
+:host ::ng-deep .ql-toolbar button.ql-active {
+  background-color: #e2e8f0;
+  border-radius: 4px;
+}
+
 :host ::ng-deep .ql-toolbar .ql-color-picker.ql-expanded .ql-picker-options {
   width: 112px;
   display: flex;
