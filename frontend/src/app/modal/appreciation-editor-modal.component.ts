@@ -114,7 +114,7 @@ export class AppreciationEditorModalComponent
         next: (res) => {
           if (res.success && !this.showCongratulation) {
             if (res.completion) {
-              this.ghostText = this.normalizeCompletion(res.completion);
+              this.ghostText = this.normalizeCompletion(res.completion, this.userText);
               setTimeout(() => this.updateGhostPosition());
             }
             this.spellCorrections = (res.corrections || [])
@@ -733,15 +733,24 @@ countAllPassed(): number {
     this.spellCorrections = [];
   }
 
-  private normalizeCompletion(completion: string): string {
+  private normalizeCompletion(completion: string, userText: string): string {
     // Replace leading semicolon/colon with period
     let text = completion.replace(/^[;:]/, '.');
 
-    // Capitalize first letter after sentence-ending punctuation + space
+    // Capitalize first letter after sentence-ending punctuation + space within the completion
     text = text.replace(/([.!?]\s+)([a-z])/g, (_, punct, letter) => punct + letter.toUpperCase());
 
-    // Capitalize the very first alphabetic character if it starts the completion
-    text = text.replace(/^(\s*[.!?]?\s*)([a-z])/, (_, prefix, letter) => prefix + letter.toUpperCase());
+    // Adjust the first alphabetic character based on whether it continues a sentence
+    const trimmedUserText = userText.trimEnd();
+    const endsWithSentencePunctuation = /[.!?]$/.test(trimmedUserText) || trimmedUserText.length === 0;
+
+    if (endsWithSentencePunctuation) {
+      // New sentence: capitalize the first letter after optional punctuation
+      text = text.replace(/^(\s*[.!?]?\s*)([a-z])/, (_, prefix, letter) => prefix + letter.toUpperCase());
+    } else {
+      // Continuing a sentence: lowercase the first letter (skip any leading punctuation + space)
+      text = text.replace(/^(\s*[.!?]?\s*)([A-Z])/, (_, prefix, letter) => prefix + letter.toLowerCase());
+    }
 
     return text;
   }
