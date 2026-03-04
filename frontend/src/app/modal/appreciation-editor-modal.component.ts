@@ -153,6 +153,7 @@ export class AppreciationEditorModalComponent
   ghostIndent = 0;
   spellCorrections: SpellCorrection[] = [];
   private ignoredWords: Set<string> = new Set();
+  private isAutoCapitalizing = false;
 
   score = 0;
   isCheckingLanguage = false;
@@ -249,6 +250,10 @@ countAllPassed(): number {
 
   onContentChanged(event: any): void {
     if (!this.quillEditor) return;
+    if (this.isAutoCapitalizing) return;
+
+    this.autoCapitalize();
+
     this.plainText = this.quillEditor.getText().replace(/\n$/, '');
     this.userText = this.plainText;
     this.onTextChange();
@@ -730,6 +735,29 @@ countAllPassed(): number {
 
   private escapeRegex(str: string): string {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  private autoCapitalize(): void {
+    if (!this.quillEditor || this.isAutoCapitalizing) return;
+
+    const text = this.quillEditor.getText();
+
+    // Match: first letter of text OR first letter after sentence-ending punctuation + space
+    const regex = /^[a-z]|(?<=[.!?]\s)[a-z]/g;
+    let match: RegExpExecArray | null;
+
+    while ((match = regex.exec(text)) !== null) {
+      const idx = match.index;
+      const upper = match[0].toUpperCase();
+
+      // Preserve existing formatting (bold, italic, underline, color) at this position
+      const format = this.quillEditor.getFormat(idx, 1);
+
+      this.isAutoCapitalizing = true;
+      this.quillEditor.deleteText(idx, 1, 'silent');
+      this.quillEditor.insertText(idx, upper, format, 'silent');
+      this.isAutoCapitalizing = false;
+    }
   }
 
   onKeydown(event: KeyboardEvent): void {
