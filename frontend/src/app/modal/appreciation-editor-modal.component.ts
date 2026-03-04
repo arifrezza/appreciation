@@ -779,6 +779,10 @@ countAllPassed(): number {
 
       if (!this.quillEditor) return;
 
+      // Save ghost text before any text manipulation — setText() fires
+      // onContentChanged synchronously, which clears this.ghostText
+      const savedGhostText = this.ghostText;
+
       // Capture active formats before any text manipulation (setText clears them)
       const activeFormats = this.quillEditor.getFormat();
 
@@ -796,7 +800,7 @@ countAllPassed(): number {
 
       // Append ghost text at the end, preserving all active formats
       const len = this.quillEditor.getLength() - 1; // -1 for trailing \n
-      const trimmedGhost = this.ghostText.trimStart();
+      const trimmedGhost = savedGhostText.trimStart();
       const needsSpace = correctedText.length > 0 && !correctedText.endsWith(' ');
       this.quillEditor.insertText(len, (needsSpace ? ' ' : '') + trimmedGhost, activeFormats);
 
