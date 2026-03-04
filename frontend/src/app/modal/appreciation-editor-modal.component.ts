@@ -140,6 +140,7 @@ export class AppreciationEditorModalComponent
   ghostText = '';
   ghostTop = 0;
   ghostLeft = 0;
+  ghostWidth = 0;
   spellCorrections: SpellCorrection[] = [];
   private ignoredWords: Set<string> = new Set();
 
@@ -225,20 +226,14 @@ countAllPassed(): number {
   private updateGhostPosition(): void {
     if (!this.quillEditor || !this.ghostText) return;
     try {
-      const length = this.quillEditor.getLength() - 1; // exclude trailing \n
-      const bounds = this.quillEditor.getBounds(length);
-      if (bounds) {
-        // bounds is relative to .ql-editor scroll container
-        // ghost-overlay is relative to .textarea-wrapper
-        // Compute offset from .textarea-wrapper to .ql-editor
-        const editorEl = this.quillEditor.root;
-        const wrapperEl = editorEl.closest('.textarea-wrapper');
-        if (wrapperEl) {
-          const editorRect = editorEl.getBoundingClientRect();
-          const wrapperRect = wrapperEl.getBoundingClientRect();
-          this.ghostTop = bounds.top + (editorRect.top - wrapperRect.top);
-          this.ghostLeft = bounds.left + bounds.width + (editorRect.left - wrapperRect.left);
-        }
+      const editorEl = this.quillEditor.root;
+      const wrapperEl = editorEl.closest('.textarea-wrapper') as HTMLElement;
+      if (wrapperEl) {
+        const editorRect = editorEl.getBoundingClientRect();
+        const wrapperRect = wrapperEl.getBoundingClientRect();
+        this.ghostTop = editorRect.top - wrapperRect.top;
+        this.ghostLeft = editorRect.left - wrapperRect.left;
+        this.ghostWidth = editorRect.width;
       }
     } catch (e) {
       // getBounds can throw if editor not fully rendered
