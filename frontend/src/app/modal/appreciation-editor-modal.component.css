@@ -93,7 +93,7 @@
   margin-right: 0;
 }
 
-:host ::ng-deep .ql-toolbar .ql-color-picker .ql-picker-options {
+:host ::ng-deep .ql-toolbar .ql-color-picker.ql-expanded .ql-picker-options {
   width: 112px;
   display: flex;
   flex-wrap: wrap;

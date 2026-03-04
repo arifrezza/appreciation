@@ -27,8 +27,8 @@ export class AppreciationEditorModalComponent
   quillModules = {
     toolbar: {
       container: [
-        ['bold', 'italic', 'underline'],
-        [{ 'color': ['#000000', '#e60000', '#ff9900', '#ffff00', '#008a00', '#0066cc', '#9933ff', '#ffffff', '#facccc', '#ffebcc', '#ffffcc', '#cce8cc', '#cce0f5', '#ebd6ff'] }]
+        [{ 'color': ['#000000', '#e60000', '#ff9900', '#ffff00', '#008a00', '#0066cc', '#9933ff', '#ffffff', '#facccc', '#ffebcc', '#ffffcc', '#cce8cc', '#cce0f5', '#ebd6ff'] }],
+        ['bold', 'italic', 'underline']
       ]
     },
     keyboard: {
