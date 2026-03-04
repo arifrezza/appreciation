@@ -3,8 +3,6 @@ import {
   Input,
   Output,
   EventEmitter,
-  ViewChild,
-  ElementRef,
   AfterViewInit,
   OnDestroy
 } from '@angular/core';
@@ -12,6 +10,7 @@ import {
 import { LanguageService, QualityResponse, SpellCorrection } from '../services/language.service';
 import { Subject, forkJoin, EMPTY } from 'rxjs';
 import { debounceTime, filter, switchMap, takeUntil } from 'rxjs/operators';
+import Quill from 'quill';
 
 type RuleStatus = 'neutral' | 'success' | 'error';
 
@@ -23,7 +22,16 @@ type RuleStatus = 'neutral' | 'success' | 'error';
 export class AppreciationEditorModalComponent
   implements AfterViewInit, OnDestroy {
 
-  @ViewChild('mainTextarea') mainTextarea!: ElementRef<HTMLTextAreaElement>;
+  private quillEditor!: Quill;
+
+  quillModules = {
+    toolbar: {
+      container: [
+        ['bold', 'italic', 'underline'],
+        [{ 'color': ['#000000', '#e60000', '#ff9900', '#ffff00', '#008a00', '#0066cc', '#9933ff', '#ffffff', '#facccc', '#ffebcc', '#ffffcc', '#cce8cc', '#cce0f5', '#ebd6ff'] }]
+      ]
+    }
+  };
 
   constructor(private languageService: LanguageService) { }
 
@@ -32,11 +40,6 @@ export class AppreciationEditorModalComponent
   ====================== */
 
   ngAfterViewInit(): void {
-
-    // focus textarea
-    setTimeout(() => {
-      this.mainTextarea?.nativeElement?.focus();
-    }, 300);
 
     // ⭐ Reactive typing stream
     this.typingSubject
@@ -103,6 +106,7 @@ export class AppreciationEditorModalComponent
           if (res.success && !this.showCongratulation) {
             if (res.completion) {
               this.ghostText = res.completion;
+              setTimeout(() => this.updateGhostPosition());
             }
             this.spellCorrections = (res.corrections || [])
               .filter(c => !this.ignoredWords.has(c.wrong.toLowerCase()));
@@ -130,9 +134,12 @@ export class AppreciationEditorModalComponent
   ====================== */
 
   userText = '';
+  plainText = '';
   aiText = '';
   showAiSuggestion = false;
   ghostText = '';
+  ghostTop = 0;
+  ghostLeft = 0;
   spellCorrections: SpellCorrection[] = [];
   private ignoredWords: Set<string> = new Set();
 
@@ -197,6 +204,45 @@ countAllPassed(): number {
       return this.ghostText;
     }
     return ' ' + this.ghostText;
+  }
+
+  /* =====================
+     QUILL EDITOR
+  ====================== */
+
+  onEditorCreated(editor: Quill): void {
+    this.quillEditor = editor;
+    setTimeout(() => editor.focus(), 300);
+  }
+
+  onContentChanged(event: any): void {
+    if (!this.quillEditor) return;
+    this.plainText = this.quillEditor.getText().replace(/\n$/, '');
+    this.userText = this.plainText;
+    this.onTextChange();
+  }
+
+  private updateGhostPosition(): void {
+    if (!this.quillEditor || !this.ghostText) return;
+    try {
+      const length = this.quillEditor.getLength() - 1; // exclude trailing \n
+      const bounds = this.quillEditor.getBounds(length);
+      if (bounds) {
+        // bounds is relative to .ql-editor scroll container
+        // ghost-overlay is relative to .textarea-wrapper
+        // Compute offset from .textarea-wrapper to .ql-editor
+        const editorEl = this.quillEditor.root;
+        const wrapperEl = editorEl.closest('.textarea-wrapper');
+        if (wrapperEl) {
+          const editorRect = editorEl.getBoundingClientRect();
+          const wrapperRect = wrapperEl.getBoundingClientRect();
+          this.ghostTop = bounds.top + (editorRect.top - wrapperRect.top);
+          this.ghostLeft = bounds.left + bounds.width + (editorRect.left - wrapperRect.left);
+        }
+      }
+    } catch (e) {
+      // getBounds can throw if editor not fully rendered
+    }
   }
 
   /* =====================
@@ -410,11 +456,15 @@ countAllPassed(): number {
 
   useAiText(): void {
     this.userText = this.aiText;
+    this.plainText = this.aiText;
+    if (this.quillEditor) {
+      this.quillEditor.setText(this.aiText);
+    }
     this.showAiSuggestion = false;
     this.isCheckingLanguage = true;
 
     setTimeout(() => {
-      this.mainTextarea?.nativeElement?.focus();
+      this.quillEditor?.focus();
     }, 100);
 
     // Here You get the Response of type Quality Response
@@ -499,6 +549,10 @@ countAllPassed(): number {
 
   private resetToInitialState(): void {
     this.userText = '';
+    this.plainText = '';
+    if (this.quillEditor) {
+      this.quillEditor.setText('');
+    }
     this.aiText = '';
     this.showAiSuggestion = false;
     this.ghostText = '';
@@ -591,20 +645,34 @@ countAllPassed(): number {
   }
 
   acceptCorrection(correction: SpellCorrection): void {
-    const regex = new RegExp(this.escapeRegex(correction.wrong), 'i');
-    this.userText = this.userText.replace(regex, correction.fixed);
+    if (this.quillEditor) {
+      const text = this.quillEditor.getText().replace(/\n$/, '');
+      const idx = text.toLowerCase().indexOf(correction.wrong.toLowerCase());
+      if (idx !== -1) {
+        this.quillEditor.deleteText(idx, correction.wrong.length);
+        this.quillEditor.insertText(idx, correction.fixed);
+      }
+    }
     this.spellCorrections = this.spellCorrections
       .filter(c => c.wrong !== correction.wrong);
+    this.plainText = this.quillEditor?.getText().replace(/\n$/, '') || '';
+    this.userText = this.plainText;
     this.previousRawText = this.userText;
     this.onTextChange();
   }
 
   acceptAllCorrections(): void {
-    for (const c of this.activeCorrections) {
-      const regex = new RegExp(this.escapeRegex(c.wrong), 'gi');
-      this.userText = this.userText.replace(regex, c.fixed);
+    if (this.quillEditor) {
+      let text = this.quillEditor.getText().replace(/\n$/, '');
+      for (const c of this.activeCorrections) {
+        const regex = new RegExp(this.escapeRegex(c.wrong), 'gi');
+        text = text.replace(regex, c.fixed);
+      }
+      this.quillEditor.setText(text);
     }
     this.spellCorrections = [];
+    this.plainText = this.quillEditor?.getText().replace(/\n$/, '') || '';
+    this.userText = this.plainText;
     this.previousRawText = this.userText;
     this.onTextChange();
   }
@@ -629,16 +697,34 @@ countAllPassed(): number {
   onKeydown(event: KeyboardEvent): void {
     if (event.key === 'Tab' && this.ghostText) {
       event.preventDefault();
+
+      if (!this.quillEditor) return;
+
       // Apply spelling corrections first
+      const currentText = this.quillEditor.getText().replace(/\n$/, '');
+      let correctedText = currentText;
       for (const c of this.activeCorrections) {
         const regex = new RegExp(this.escapeRegex(c.wrong), 'gi');
-        this.userText = this.userText.replace(regex, c.fixed);
+        correctedText = correctedText.replace(regex, c.fixed);
+      }
+      if (correctedText !== currentText) {
+        this.quillEditor.setText(correctedText);
       }
       this.spellCorrections = [];
-      // Then append ghost text
-      this.userText += this.displayGhostText;
+
+      // Append ghost text at the end
+      const len = this.quillEditor.getLength() - 1; // -1 for trailing \n
+      this.quillEditor.insertText(len, this.displayGhostText);
+
+      // Sync state
+      this.plainText = this.quillEditor.getText().replace(/\n$/, '');
+      this.userText = this.plainText;
       this.ghostText = '';
       this.previousRawText = this.userText;
+
+      // Move cursor to end
+      this.quillEditor.setSelection(this.quillEditor.getLength(), 0);
+
       this.onTextChange();
     }
   }

@@ -18,18 +18,19 @@
       <div class="left">
 
         <div class="textarea-wrapper">
-          <div class="ghost-layer" *ngIf="ghostText">
-            <span class="ghost-hidden">{{ userText }}</span><span class="ghost-completion">{{ displayGhostText }}</span><span class="ghost-hint-inline"> Press Tab ↹</span>
+          <quill-editor
+            #editor
+            [modules]="quillModules"
+            [placeholder]="''"
+            (onEditorCreated)="onEditorCreated($event)"
+            (onContentChanged)="onContentChanged($event)"
+            (keydown)="onKeydown($event)"
+          ></quill-editor>
+          <div class="ghost-overlay" *ngIf="ghostText"
+               [style.top.px]="ghostTop" [style.left.px]="ghostLeft">
+            <span class="ghost-completion">{{ displayGhostText }}</span>
+            <span class="ghost-hint-inline"> Press Tab ↹</span>
           </div>
-          <textarea
-                  #mainTextarea
-                  class="main-text"
-                  [(ngModel)]="userText"
-                  (input)="onTextChange()"
-                  (keydown)="onKeydown($event)"
-                  [class.has-ghost]="ghostText"
-                  autofocus
-          ></textarea>
         </div>
 
         <!-- Spell correction chip bar -->
