@@ -30,6 +30,14 @@ export class AppreciationEditorModalComponent
         ['bold', 'italic', 'underline'],
         [{ 'color': ['#000000', '#e60000', '#ff9900', '#ffff00', '#008a00', '#0066cc', '#9933ff', '#ffffff', '#facccc', '#ffebcc', '#ffffcc', '#cce8cc', '#cce0f5', '#ebd6ff'] }]
       ]
+    },
+    keyboard: {
+      bindings: {
+        tab: {
+          key: 'Tab',
+          handler: () => true
+        }
+      }
     }
   };
 
@@ -726,6 +734,9 @@ countAllPassed(): number {
       const trimmedGhost = this.ghostText.trimStart();
       const needsSpace = correctedText.length > 0 && !correctedText.endsWith(' ');
       this.quillEditor.insertText(len, (needsSpace ? ' ' : '') + trimmedGhost);
+
+      // Remove any indent formatting that Quill's Tab handler may have applied
+      this.quillEditor.formatLine(0, this.quillEditor.getLength(), 'indent', false);
 
       // Sync state
       this.plainText = this.quillEditor.getText().replace(/\n$/, '');
