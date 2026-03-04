@@ -233,13 +233,15 @@ countAllPassed(): number {
       const svg = colorLabel.closest('svg');
       this.colorObserver = new MutationObserver(() => {
         const color = (colorLabel as HTMLElement).style.stroke;
-        if (svg && color) {
-          svg.querySelectorAll('.ql-stroke').forEach((el: Element) => {
-            if (el !== colorLabel) {
+        svg?.querySelectorAll('.ql-stroke').forEach((el: Element) => {
+          if (el !== colorLabel) {
+            if (color) {
               (el as HTMLElement).style.stroke = color;
+            } else {
+              (el as HTMLElement).style.removeProperty('stroke');
             }
-          });
-        }
+          }
+        });
       });
       this.colorObserver.observe(colorLabel, { attributes: true, attributeFilter: ['style'] });
     }
