@@ -138,13 +138,8 @@
   line-height: 1.6;
   white-space: pre-wrap;
   word-wrap: break-word;
-  padding: 14px 16px;
   box-sizing: border-box;
   overflow: hidden;
-}
-
-.ghost-spacer {
-  visibility: hidden;
 }
 
 .ghost-completion {

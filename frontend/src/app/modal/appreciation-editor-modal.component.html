@@ -27,8 +27,9 @@
             (keydown)="onKeydown($event)"
           ></quill-editor>
           <div class="ghost-overlay" *ngIf="ghostText"
-               [style.top.px]="ghostTop" [style.left.px]="ghostLeft" [style.width.px]="ghostWidth">
-            <span class="ghost-spacer">{{ userText }}</span><span class="ghost-completion">{{ displayGhostText }}</span>
+               [style.top.px]="ghostTop" [style.left.px]="ghostLeft"
+               [style.width.px]="ghostWidth" [style.text-indent.px]="ghostIndent">
+            <span class="ghost-completion">{{ displayGhostText }}</span>
             <span class="ghost-hint-inline"> Press Tab ↹</span>
           </div>
         </div>

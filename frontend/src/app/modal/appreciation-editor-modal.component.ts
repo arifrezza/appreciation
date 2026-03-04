@@ -141,6 +141,7 @@ export class AppreciationEditorModalComponent
   ghostTop = 0;
   ghostLeft = 0;
   ghostWidth = 0;
+  ghostIndent = 0;
   spellCorrections: SpellCorrection[] = [];
   private ignoredWords: Set<string> = new Set();
 
@@ -226,14 +227,26 @@ countAllPassed(): number {
   private updateGhostPosition(): void {
     if (!this.quillEditor || !this.ghostText) return;
     try {
-      const editorEl = this.quillEditor.root;
-      const wrapperEl = editorEl.closest('.textarea-wrapper') as HTMLElement;
-      if (wrapperEl) {
-        const editorRect = editorEl.getBoundingClientRect();
-        const wrapperRect = wrapperEl.getBoundingClientRect();
-        this.ghostTop = editorRect.top - wrapperRect.top;
-        this.ghostLeft = editorRect.left - wrapperRect.left;
-        this.ghostWidth = editorRect.width;
+      const length = this.quillEditor.getLength() - 1;
+      const bounds = this.quillEditor.getBounds(length);
+      if (bounds) {
+        const editorEl = this.quillEditor.root;
+        const wrapperEl = editorEl.closest('.textarea-wrapper') as HTMLElement;
+        if (wrapperEl) {
+          const editorRect = editorEl.getBoundingClientRect();
+          const wrapperRect = wrapperEl.getBoundingClientRect();
+          const editorOffsetTop = editorRect.top - wrapperRect.top;
+          const editorOffsetLeft = editorRect.left - wrapperRect.left;
+          const padLeft = parseFloat(getComputedStyle(editorEl).paddingLeft) || 16;
+          const padRight = parseFloat(getComputedStyle(editorEl).paddingRight) || 16;
+
+          // Position overlay at cursor line, covering editor content area
+          this.ghostTop = bounds.top + editorOffsetTop;
+          this.ghostLeft = editorOffsetLeft + padLeft;
+          this.ghostWidth = editorRect.width - padLeft - padRight;
+          // text-indent: first line starts at cursor X (from content area left)
+          this.ghostIndent = (bounds.left + bounds.width) - padLeft;
+        }
       }
     } catch (e) {
       // getBounds can throw if editor not fully rendered
@@ -709,7 +722,10 @@ countAllPassed(): number {
 
       // Append ghost text at the end
       const len = this.quillEditor.getLength() - 1; // -1 for trailing \n
-      this.quillEditor.insertText(len, this.displayGhostText);
+      const needsSpace = correctedText.length > 0
+        && !correctedText.endsWith(' ')
+        && !this.ghostText.startsWith(' ');
+      this.quillEditor.insertText(len, (needsSpace ? ' ' : '') + this.ghostText);
 
       // Sync state
       this.plainText = this.quillEditor.getText().replace(/\n$/, '');
