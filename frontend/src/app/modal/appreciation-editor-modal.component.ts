@@ -118,6 +118,7 @@ export class AppreciationEditorModalComponent
               setTimeout(() => this.updateGhostPosition());
             }
             this.spellCorrections = (res.corrections || [])
+              .filter(c => c.wrong.toLowerCase() !== c.fixed.toLowerCase())
               .filter(c => !this.ignoredWords.has(c.wrong.toLowerCase()));
           }
         }

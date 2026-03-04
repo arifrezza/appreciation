@@ -42,7 +42,7 @@ class AutocompleteService @Inject()(
 			  |Rules for corrections:
 			  |- IMPORTANT: Flag ALL misspelled words in the user's text in a single response. Do not leave any misspellings uncorrected.
 			  |- Only flag genuinely misspelled words
-			  |- Do NOT replace correctly-spelled words with synonyms or antonyms. Corrections are for spelling errors ONLY, not for improving tone or sentiment (e.g., do NOT flag "poor" -> "great" or "bad" -> "good")
+			  |- Do NOT replace correctly-spelled words with synonyms, antonyms, or the same word. Corrections are for spelling errors ONLY, not for improving tone or sentiment. Do NOT include a word in corrections if it is spelled correctly (e.g., do NOT flag "poor", "bad", or any other valid English word)
 			  |- Do NOT correct proper nouns, names, abbreviations, or acronyms
 			  |- Do NOT correct informal but valid phrasing (e.g., "gonna", "wanna")
 			  |- If no typos exist, return an empty array for corrections
