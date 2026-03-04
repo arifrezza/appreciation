@@ -691,8 +691,10 @@ countAllPassed(): number {
   acceptCorrection(correction: SpellCorrection): void {
     if (this.quillEditor) {
       const text = this.quillEditor.getText().replace(/\n$/, '');
-      const idx = text.toLowerCase().indexOf(correction.wrong.toLowerCase());
-      if (idx !== -1) {
+      const regex = new RegExp(`\\b${this.escapeRegex(correction.wrong)}\\b`, 'i');
+      const match = regex.exec(text);
+      if (match) {
+        const idx = match.index;
         this.quillEditor.deleteText(idx, correction.wrong.length);
         this.quillEditor.insertText(idx, correction.fixed);
       }
@@ -709,7 +711,7 @@ countAllPassed(): number {
     if (this.quillEditor) {
       let text = this.quillEditor.getText().replace(/\n$/, '');
       for (const c of this.activeCorrections) {
-        const regex = new RegExp(this.escapeRegex(c.wrong), 'gi');
+        const regex = new RegExp(`\\b${this.escapeRegex(c.wrong)}\\b`, 'gi');
         text = text.replace(regex, c.fixed);
       }
       this.quillEditor.setText(text);
@@ -823,7 +825,7 @@ countAllPassed(): number {
       const currentText = this.quillEditor.getText().replace(/\n$/, '');
       let correctedText = currentText;
       for (const c of this.activeCorrections) {
-        const regex = new RegExp(this.escapeRegex(c.wrong), 'gi');
+        const regex = new RegExp(`\\b${this.escapeRegex(c.wrong)}\\b`, 'gi');
         correctedText = correctedText.replace(regex, c.fixed);
       }
       if (correctedText !== currentText) {

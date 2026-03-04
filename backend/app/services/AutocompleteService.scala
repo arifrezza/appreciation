@@ -40,6 +40,7 @@ class AutocompleteService @Inject()(
 			  |2. "corrections": an array of objects with "wrong" (misspelled word as it appears) and "fixed" (corrected word) for any misspelled words in the user's text.
 			  |
 			  |Rules for corrections:
+			  |- IMPORTANT: Flag ALL misspelled words in the user's text in a single response. Do not leave any misspellings uncorrected.
 			  |- Only flag genuinely misspelled words
 			  |- Do NOT correct proper nouns, names, abbreviations, or acronyms
 			  |- Do NOT correct informal but valid phrasing (e.g., "gonna", "wanna")
