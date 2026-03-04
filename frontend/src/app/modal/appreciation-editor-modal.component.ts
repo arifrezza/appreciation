@@ -23,6 +23,7 @@ export class AppreciationEditorModalComponent
   implements AfterViewInit, OnDestroy {
 
   private quillEditor!: Quill;
+  private colorObserver?: MutationObserver;
 
   quillModules = {
     toolbar: {
@@ -124,7 +125,7 @@ export class AppreciationEditorModalComponent
   }
 
   ngOnDestroy(): void {
-      console.log("DESTROY CALLED"); // 👈 add this
+    this.colorObserver?.disconnect();
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -224,6 +225,24 @@ countAllPassed(): number {
   onEditorCreated(editor: Quill): void {
     this.quillEditor = editor;
     setTimeout(() => editor.focus(), 300);
+
+    // Sync color picker "A" letter color with the selected text color
+    const toolbar = editor.getModule('toolbar') as any;
+    const colorLabel = toolbar?.container?.querySelector('.ql-color-picker .ql-color-label');
+    if (colorLabel) {
+      const svg = colorLabel.closest('svg');
+      this.colorObserver = new MutationObserver(() => {
+        const color = (colorLabel as HTMLElement).style.stroke;
+        if (svg && color) {
+          svg.querySelectorAll('.ql-stroke').forEach((el: Element) => {
+            if (el !== colorLabel) {
+              (el as HTMLElement).style.stroke = color;
+            }
+          });
+        }
+      });
+      this.colorObserver.observe(colorLabel, { attributes: true, attributeFilter: ['style'] });
+    }
   }
 
   onContentChanged(event: any): void {
