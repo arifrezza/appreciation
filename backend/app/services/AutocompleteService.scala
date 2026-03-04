@@ -35,6 +35,7 @@ class AutocompleteService @Inject()(
 			  |
 			  |Return a JSON object with two fields:
 			  |1. "completion": the remaining words to naturally finish the current sentence. Do NOT repeat any text the user has already written. Keep it concise — one sentence fragment, no more than 20 words.
+			  |   Use proper sentence punctuation. If the completion starts a new clause, prefer a period (.) over semicolons (;) or colons (:). Capitalize the first letter after any sentence-ending punctuation (. ! ?).
 			  |2. "corrections": an array of objects with "wrong" (misspelled word as it appears) and "fixed" (corrected word) for any misspelled words in the user's text.
 			  |
 			  |Rules for corrections:

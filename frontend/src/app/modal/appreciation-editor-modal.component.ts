@@ -114,7 +114,7 @@ export class AppreciationEditorModalComponent
         next: (res) => {
           if (res.success && !this.showCongratulation) {
             if (res.completion) {
-              this.ghostText = res.completion;
+              this.ghostText = this.normalizeCompletion(res.completion);
               setTimeout(() => this.updateGhostPosition());
             }
             this.spellCorrections = (res.corrections || [])
@@ -731,6 +731,19 @@ countAllPassed(): number {
       this.ignoredWords.add(c.wrong.toLowerCase())
     );
     this.spellCorrections = [];
+  }
+
+  private normalizeCompletion(completion: string): string {
+    // Replace leading semicolon/colon with period
+    let text = completion.replace(/^[;:]/, '.');
+
+    // Capitalize first letter after sentence-ending punctuation + space
+    text = text.replace(/([.!?]\s+)([a-z])/g, (_, punct, letter) => punct + letter.toUpperCase());
+
+    // Capitalize the very first alphabetic character if it starts the completion
+    text = text.replace(/^(\s*[.!?]?\s*)([a-z])/, (_, prefix, letter) => prefix + letter.toUpperCase());
+
+    return text;
   }
 
   private escapeRegex(str: string): string {
