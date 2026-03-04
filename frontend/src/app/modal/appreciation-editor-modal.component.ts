@@ -252,6 +252,7 @@ countAllPassed(): number {
     if (!this.quillEditor) return;
     if (this.isAutoCapitalizing) return;
 
+    this.autoCollapseSpaces();
     this.autoCapitalize();
 
     this.plainText = this.quillEditor.getText().replace(/\n$/, '');
@@ -778,6 +779,29 @@ countAllPassed(): number {
       this.isAutoCapitalizing = true;
       this.quillEditor.deleteText(idx, 1, 'silent');
       this.quillEditor.insertText(idx, upper, format, 'silent');
+      this.isAutoCapitalizing = false;
+    }
+  }
+
+  private autoCollapseSpaces(): void {
+    if (!this.quillEditor || this.isAutoCapitalizing) return;
+
+    const text = this.quillEditor.getText();
+    // Find runs of 2+ spaces
+    const regex = / {2,}/g;
+    const matches: { index: number; length: number }[] = [];
+    let match: RegExpExecArray | null;
+
+    while ((match = regex.exec(text)) !== null) {
+      matches.push({ index: match.index, length: match[0].length });
+    }
+
+    // Process in reverse order so earlier indices aren't shifted by deletions
+    for (let i = matches.length - 1; i >= 0; i--) {
+      const m = matches[i];
+      const extraSpaces = m.length - 1; // keep one space, delete the rest
+      this.isAutoCapitalizing = true;
+      this.quillEditor.deleteText(m.index + 1, extraSpaces, 'silent');
       this.isAutoCapitalizing = false;
     }
   }
