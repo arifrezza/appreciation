@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
+import { QuillModule } from 'ngx-quill';
 
 import { AppComponent } from './app.component';
 import { LoginComponent } from './login/login.component';
@@ -20,7 +21,8 @@ import { AuthService } from './services/auth.service';
   imports: [
     BrowserModule,
     FormsModule,
-    HttpClientModule
+    HttpClientModule,
+    QuillModule.forRoot()
   ],
   providers: [
     AuthService

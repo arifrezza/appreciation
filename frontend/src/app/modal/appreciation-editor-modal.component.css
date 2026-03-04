@@ -73,23 +73,45 @@
   flex-direction: column;
 }
 
-.main-text {
-  width: 100%;
-  height: 260px;
-  resize: none;
+/* Quill Editor */
+:host ::ng-deep .ql-toolbar.ql-snow {
+  border: 1px solid #cbd5e1;
+  border-radius: 10px 10px 0 0;
+  background: #f9fafb;
+  display: flex;
+  justify-content: flex-end;
+  padding: 4px 8px;
+}
+
+:host ::ng-deep .ql-toolbar .ql-formats {
+  margin-right: 0;
+}
+
+:host ::ng-deep .ql-editor {
+  min-height: 220px;
+  max-height: 260px;
   font-size: 16px;
   line-height: 1.6;
   padding: 14px 16px;
-  border-radius: 10px;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+:host ::ng-deep .ql-container.ql-snow {
   border: 1px solid #cbd5e1;
+  border-top: none;
+  border-radius: 0 0 10px 10px;
   background: #ffffff;
-  outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.main-text:focus {
+:host ::ng-deep .ql-container.ql-snow:focus-within {
   border-color: #111827;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+:host ::ng-deep .ql-editor.ql-blank::before {
+  font-style: normal;
+  color: #9ca3af;
 }
 
 /* Ghost text autocomplete */
@@ -97,26 +119,16 @@
   position: relative;
 }
 
-.ghost-layer {
+.ghost-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  padding: 14px 16px;
+  pointer-events: none;
+  z-index: 2;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 16px;
   line-height: 1.6;
   white-space: pre-wrap;
   word-wrap: break-word;
-  pointer-events: none;
-  overflow: hidden;
-  border: 1px solid transparent;
-  border-radius: 10px;
-}
-
-.ghost-hidden {
-  color: transparent;
+  max-width: calc(100% - 32px);
 }
 
 .ghost-completion {
@@ -137,10 +149,6 @@
   vertical-align: middle;
   animation: fadeIn 0.3s ease;
   pointer-events: none;
-}
-
-.main-text.has-ghost {
-  background: transparent;
 }
 
 /* Spell correction chip bar */
