@@ -76,6 +76,10 @@
 }
 
 /* Quill Editor */
+:host ::ng-deep quill-editor {
+  display: block;
+}
+
 :host ::ng-deep .ql-toolbar.ql-snow {
   border: 1px solid #cbd5e1;
   border-radius: 10px 10px 0 0;
@@ -90,9 +94,10 @@
 }
 
 :host ::ng-deep .ql-editor {
-  min-height: 220px;
-  max-height: 220px;
-  overflow-y: auto;
+  height: 220px !important;
+  min-height: 220px !important;
+  max-height: 220px !important;
+  overflow-y: auto !important;
   font-size: 16px;
   line-height: 1.6;
   padding: 14px 16px;
@@ -105,6 +110,7 @@
   border-radius: 0 0 10px 10px;
   background: #ffffff;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
 }
 
 :host ::ng-deep .ql-container.ql-snow:focus-within {
