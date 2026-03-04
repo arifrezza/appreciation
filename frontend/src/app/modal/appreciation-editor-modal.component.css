@@ -93,6 +93,12 @@
   margin-right: 0;
 }
 
+:host ::ng-deep .ql-toolbar .ql-color-picker .ql-picker-options {
+  width: 112px;
+  display: flex;
+  flex-wrap: wrap;
+}
+
 :host ::ng-deep .ql-editor {
   height: 220px !important;
   min-height: 220px !important;
