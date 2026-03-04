@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with th
 
 ## Project Overview
 
-An employee appreciation platform with AI-powered content moderation. Employees can log in, select a colleague, and write appreciation messages that are checked for abusive language using a dual-layer moderation system (local word list + OpenAI API).
+An employee appreciation platform with AI-powered content moderation and typing error fix. Employees can log in, select a colleague, and write appreciation messages that are checked for abusive language using a dual-layer moderation system (local word list + OpenAI API).
 
 ## Tech Stack
 
@@ -74,11 +74,14 @@ frontend/
 
 ## API Endpoints
 
-| Method | Path | Purpose |
-|--------|------|---------|
-| POST | `/api/login` | Authenticate user (email + password) |
-| GET | `/api/users/:currentUserId` | List employees (excluding current user) |
-| POST | `/api/check-abusive-words` | Content moderation check |
+| Method | Path | Purpose                                                       |
+|--------|------|---------------------------------------------------------------|
+| POST | `/api/login` | Authenticate user (email + password)                          |
+| GET | `/api/users/:currentUserId` | List employees (excluding current user)                       |
+| POST | `/api/check-abusive-words` | Content moderation check                                      |
+| POST | `/api/check-appreciation-quality` | Appreciation Analyze check                                    |
+| POST | `/api/rewrite-appreciation` | User Appreciation text is rewritten                           |
+| POST | `/api/autocomplete` | Auto complete suggestion is provided based on user imput text |
 
 ## Architecture Patterns
 
