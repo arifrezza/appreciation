@@ -738,6 +738,9 @@ countAllPassed(): number {
 
       if (!this.quillEditor) return;
 
+      // Capture active formats before any text manipulation (setText clears them)
+      const activeFormats = this.quillEditor.getFormat();
+
       // Apply spelling corrections first
       const currentText = this.quillEditor.getText().replace(/\n$/, '');
       let correctedText = currentText;
@@ -750,11 +753,11 @@ countAllPassed(): number {
       }
       this.spellCorrections = [];
 
-      // Append ghost text at the end
+      // Append ghost text at the end, preserving all active formats
       const len = this.quillEditor.getLength() - 1; // -1 for trailing \n
       const trimmedGhost = this.ghostText.trimStart();
       const needsSpace = correctedText.length > 0 && !correctedText.endsWith(' ');
-      this.quillEditor.insertText(len, (needsSpace ? ' ' : '') + trimmedGhost);
+      this.quillEditor.insertText(len, (needsSpace ? ' ' : '') + trimmedGhost, activeFormats);
 
       // Remove any indent formatting that Quill's Tab handler may have applied
       this.quillEditor.formatLine(0, this.quillEditor.getLength(), 'indent', false);
