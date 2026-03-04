@@ -202,10 +202,11 @@ countAllPassed(): number {
 
   get displayGhostText(): string {
     if (!this.ghostText) return '';
-    if (!this.userText || this.userText.endsWith(' ') || this.ghostText.startsWith(' ')) {
-      return this.ghostText;
+    const trimmed = this.ghostText.trimStart();
+    if (!this.userText || this.userText.endsWith(' ')) {
+      return trimmed;
     }
-    return ' ' + this.ghostText;
+    return ' ' + trimmed;
   }
 
   /* =====================
@@ -722,10 +723,9 @@ countAllPassed(): number {
 
       // Append ghost text at the end
       const len = this.quillEditor.getLength() - 1; // -1 for trailing \n
-      const needsSpace = correctedText.length > 0
-        && !correctedText.endsWith(' ')
-        && !this.ghostText.startsWith(' ');
-      this.quillEditor.insertText(len, (needsSpace ? ' ' : '') + this.ghostText);
+      const trimmedGhost = this.ghostText.trimStart();
+      const needsSpace = correctedText.length > 0 && !correctedText.endsWith(' ');
+      this.quillEditor.insertText(len, (needsSpace ? ' ' : '') + trimmedGhost);
 
       // Sync state
       this.plainText = this.quillEditor.getText().replace(/\n$/, '');
