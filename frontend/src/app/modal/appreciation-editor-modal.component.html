@@ -46,8 +46,11 @@
               <button class="spell-dismiss" (click)="dismissCorrection(c)" title="Ignore this word">&times;</button>
             </div>
           </div>
+          <span class="spell-tab-hint" *ngIf="activeCorrections.length === 1">
+            Press <kbd class="tab-key">Tab <span class="tab-icon">↹</span></kbd> to fix typo
+          </span>
           <div class="spell-bulk" *ngIf="activeCorrections.length >= 2">
-            <button class="spell-accept-all" (click)="acceptAllCorrections()">Fix all</button>
+            <button class="spell-accept-all" (click)="acceptAllCorrections()">Fix all <kbd class="tab-key-inline">Tab <span class="tab-icon">↹</span></kbd></button>
             <button class="spell-dismiss-all" (click)="dismissAllCorrections()">Ignore all</button>
           </div>
         </div>

@@ -810,6 +810,11 @@ countAllPassed(): number {
   }
 
   onKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Tab' && !this.ghostText && this.activeCorrections.length > 0) {
+      event.preventDefault();
+      this.acceptAllCorrections();
+      return;
+    }
     if (event.key === 'Tab' && this.ghostText) {
       event.preventDefault();
 
