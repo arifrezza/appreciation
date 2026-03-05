@@ -9,7 +9,7 @@ import {
 
 import { LanguageService, QualityResponse, SpellCorrection } from '../services/language.service';
 import { Subject, forkJoin, EMPTY } from 'rxjs';
-import { debounceTime, filter, switchMap, takeUntil } from 'rxjs/operators';
+import { debounceTime, filter, switchMap, takeUntil, catchError } from 'rxjs/operators';
 import Quill from 'quill';
 
 type RuleStatus = 'neutral' | 'success' | 'error';
@@ -89,11 +89,17 @@ export class AppreciationEditorModalComponent
         switchMap(text => {
           const lowerText = text.toLowerCase();
 
-          const failingCriteria = this.guideItems
+          let failingCriteria = this.guideItems
             .filter(i => i.label !== 'Abusive Check' && i.status !== 'success')
             .map(i => i.label);
 
-          if (failingCriteria.length === 0 && !this.showCongratulation) return EMPTY;
+          if (failingCriteria.length === 0) {
+            if (!this.showCongratulation) return EMPTY;
+            // In congratulation mode, send all criteria to get spell corrections
+            failingCriteria = this.guideItems
+              .filter(i => i.label !== 'Abusive Check')
+              .map(i => i.label);
+          }
 
           // Trigger A: check if text contains a known suggested phrase
           let targetCriterion: string | undefined;
@@ -106,7 +112,9 @@ export class AppreciationEditorModalComponent
 
           // Trigger B: no keyword match — targetCriterion stays undefined,
           // backend picks the best-fitting failing criterion
-          return this.languageService.autocomplete(text, failingCriteria, targetCriterion);
+          return this.languageService.autocomplete(text, failingCriteria, targetCriterion).pipe(
+            catchError(() => EMPTY)
+          );
         }),
         takeUntil(this.destroy$)
       )
