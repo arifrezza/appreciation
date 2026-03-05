@@ -85,7 +85,7 @@ export class AppreciationEditorModalComponent
     this.autocompleteSubject
       .pipe(
         debounceTime(400),
-        filter(() => this.countAllPassed() < 5 && !this.showCongratulation && this.guideItems[0].status !== 'error'),
+        filter(() => (this.countAllPassed() < 5 || this.showCongratulation) && this.guideItems[0].status !== 'error'),
         switchMap(text => {
           const lowerText = text.toLowerCase();
 
@@ -112,8 +112,8 @@ export class AppreciationEditorModalComponent
       )
       .subscribe({
         next: (res) => {
-          if (res.success && !this.showCongratulation) {
-            if (res.completion) {
+          if (res.success) {
+            if (res.completion && !this.showCongratulation) {
               this.ghostText = this.normalizeCompletion(res.completion, this.userText);
               setTimeout(() => this.updateGhostPosition());
             }
@@ -333,12 +333,14 @@ countAllPassed(): number {
     // ⭐ push to quality check stream
     this.typingSubject.next(text);
 
-    // ⭐ push to autocomplete stream (if there are failing criteria)
+    // ⭐ push to autocomplete stream (if there are failing criteria OR in congratulation for typo checks)
     const failingCount = this.guideItems.filter(
       i => i.label !== 'Abusive Check' && i.status !== 'success'
     ).length;
-    if (failingCount > 0 && text.length >= 10 && this.guideItems[0].status !== 'error') {
-      this.autocompleteSubject.next(text);
+    if (text.length >= 10 && this.guideItems[0].status !== 'error') {
+      if (failingCount > 0 || this.showCongratulation) {
+        this.autocompleteSubject.next(text);
+      }
     }
   }
 
