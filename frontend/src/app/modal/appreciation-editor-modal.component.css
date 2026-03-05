@@ -372,7 +372,7 @@
 
 .negative-tooltip {
   position: absolute;
-  bottom: calc(100% + 20px);
+  top: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
   background: #fef9c3;
@@ -388,15 +388,15 @@
 
 .tooltip-arrow {
   position: absolute;
-  top: 100%;
+  bottom: 100%;
   left: 50%;
   transform: translateX(-50%);
   border: 6px solid transparent;
-  border-top-color: #fef9c3;
+  border-bottom-color: #fef9c3;
 }
 
 @keyframes tooltipFadeIn {
-  from { opacity: 0; transform: translateX(-50%) translateY(4px); }
+  from { opacity: 0; transform: translateX(-50%) translateY(-4px); }
   to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 

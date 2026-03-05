@@ -60,13 +60,13 @@
         </div>
 
         <div class="rewrite-btn-wrapper">
-          <div class="negative-tooltip" *ngIf="showNegativeTooltip">
-            🤔 Enhance with AI will remove negative or sarcastic sentiments
-            <div class="tooltip-arrow"></div>
-          </div>
           <button class="rewrite-btn" [disabled]="userText.trim().length < 50 || guideItems[0].status === 'error'" (click)="rewriteWithAI(true)">
             ✨ Enhance with AI
           </button>
+          <div class="negative-tooltip" *ngIf="showNegativeTooltip">
+            <div class="tooltip-arrow"></div>
+            🤔 Enhance with AI will remove negative or sarcastic sentiments
+          </div>
         </div>
 
         <!-- AI Suggestion -->
