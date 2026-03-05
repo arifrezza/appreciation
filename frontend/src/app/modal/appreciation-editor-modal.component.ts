@@ -255,6 +255,14 @@ countAllPassed(): number {
       });
       this.colorObserver.observe(colorLabel, { attributes: true, attributeFilter: ['style'] });
     }
+
+    // Prevent color picker dropdown from stealing editor focus (keeps text selection visible)
+    const pickerElements = toolbar?.container?.querySelectorAll('.ql-picker-label, .ql-picker-options');
+    pickerElements?.forEach((el: Element) => {
+      el.addEventListener('mousedown', (e: Event) => {
+        e.preventDefault();
+      });
+    });
   }
 
   onContentChanged(event: any): void {
