@@ -20,7 +20,7 @@ case class QualityResult(
   overallScore: Int,
   guidanceType: String,
   guidance: String,
-  tone: String
+  tone: Option[String]
 )
 object QualityResult {
   implicit val format: Format[QualityResult] = Json.format[QualityResult]
