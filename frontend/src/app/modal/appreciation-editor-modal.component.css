@@ -366,13 +366,13 @@
 
 .rewrite-btn-wrapper {
   position: relative;
-  display: inline-block;
+  display: block;
   margin-top: 14px;
 }
 
 .negative-tooltip {
   position: absolute;
-  bottom: calc(100% + 8px);
+  bottom: calc(100% + 20px);
   left: 50%;
   transform: translateX(-50%);
   background: #fef9c3;
@@ -402,6 +402,7 @@
 
 .rewrite-btn {
   margin-top: 0;
+  width: 100%;
   background: linear-gradient(135deg, #6d5dfc, #ff7a59);
   border: none;
   color: white;
