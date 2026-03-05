@@ -364,8 +364,44 @@
   to { opacity: 1; }
 }
 
-.rewrite-btn {
+.rewrite-btn-wrapper {
+  position: relative;
+  display: inline-block;
   margin-top: 14px;
+}
+
+.negative-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1f2937;
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+  animation: tooltipFadeIn 0.2s ease;
+}
+
+.tooltip-arrow {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #1f2937;
+}
+
+@keyframes tooltipFadeIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(4px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.rewrite-btn {
+  margin-top: 0;
   background: linear-gradient(135deg, #6d5dfc, #ff7a59);
   border: none;
   color: white;
