@@ -308,7 +308,7 @@ countAllPassed(): number {
 
     // Only dismiss ghost on alphanumeric characters, not spaces/punctuation
     if (this.ghostText) {
-      if (this.userText.length <= this.previousRawText.length) {
+      if (this.userText.length < this.previousRawText.length) {
         this.ghostText = '';
       } else {
         const newChars = this.userText.substring(this.previousRawText.length);
