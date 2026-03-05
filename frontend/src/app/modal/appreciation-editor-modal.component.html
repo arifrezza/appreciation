@@ -59,9 +59,15 @@
           <span class="char-count">{{ userText.length }}</span>
         </div>
 
-        <button class="rewrite-btn" [disabled]="userText.trim().length < 50 || guideItems[0].status === 'error'" (click)="rewriteWithAI(true)">
-          ✨ Enhance with AI
-        </button>
+        <div class="rewrite-btn-wrapper">
+          <div class="negative-tooltip" *ngIf="showNegativeTooltip">
+            Enhance with AI will remove negative sentiments
+            <div class="tooltip-arrow"></div>
+          </div>
+          <button class="rewrite-btn" [disabled]="userText.trim().length < 50 || guideItems[0].status === 'error'" (click)="rewriteWithAI(true)">
+            ✨ Enhance with AI
+          </button>
+        </div>
 
         <!-- AI Suggestion -->
         <div class="ai-suggestion" *ngIf="showAiSuggestion">

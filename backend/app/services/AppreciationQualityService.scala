@@ -19,7 +19,8 @@ case class QualityResult(
   reinforceConsistency: CriterionResult,
   overallScore: Int,
   guidanceType: String,
-  guidance: String
+  guidance: String,
+  tone: String
 )
 object QualityResult {
   implicit val format: Format[QualityResult] = Json.format[QualityResult]
@@ -102,11 +103,21 @@ Format: "[Question referencing their message that targets the weak criterion] Co
 
 IMPORTANT: Generate ONLY ONE tip for ONE criterion. Never combine tips. Keep the tip SHORT — max 15 words before "Consider phrases such as:".
 
+## Tone Detection
+
+Evaluate the overall tone of the message:
+- "positive": Genuinely appreciative, warm, encouraging
+- "neutral": Factual or flat, neither positive nor negative
+- "negative": Contains criticism, complaints, blame, or passive-aggressive language
+- "sarcastic": Uses irony or backhanded compliments that undermine the appreciation
+
+Set the "tone" field in your response accordingly.
+
 ## Response Format
 
 Respond with ONLY this JSON object. No markdown fencing, no explanation, no text outside the JSON.
 
-{"beSpecific":{"score":0,"pass":false},"highlightImpact":{"score":0,"pass":false},"acknowledgeEffort":{"score":0,"pass":false},"reinforceConsistency":{"score":0,"pass":false},"overallScore":0,"guidanceType":"question","guidance":""}"""
+{"beSpecific":{"score":0,"pass":false},"highlightImpact":{"score":0,"pass":false},"acknowledgeEffort":{"score":0,"pass":false},"reinforceConsistency":{"score":0,"pass":false},"overallScore":0,"guidanceType":"question","guidance":"","tone":"positive"}"""
 
   def checkQuality(text: String): Future[Either[String, QualityResult]] = {
     logger.info("Calling OpenAI Chat API for quality check")
@@ -124,7 +135,7 @@ Respond with ONLY this JSON object. No markdown fencing, no explanation, no text
         )
       ),
       "temperature" -> 0.2,
-      "max_tokens" -> 120,
+      "max_tokens" -> 150,
       "response_format" -> Json.obj("type" -> "json_object")
     )
 

@@ -23,6 +23,7 @@ export interface QualityResponse {
   overallScore: number;
   guidanceType: 'question' | 'suggestion' | 'none';
   guidance: string;
+  tone?: 'positive' | 'neutral' | 'negative' | 'sarcastic';
   message?: string;
 }
 

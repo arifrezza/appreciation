@@ -71,7 +71,8 @@ class AppreciationQualityController @Inject()(
               ),
               "overallScore" -> result.overallScore,
               "guidanceType" -> result.guidanceType,
-              "guidance" -> result.guidance
+              "guidance" -> result.guidance,
+              "tone" -> result.tone
             ))
 
           case Left(error) =>

@@ -170,6 +170,7 @@ export class AppreciationEditorModalComponent
   aiGuidance = '';
   guidanceType: 'question' | 'suggestion' | 'none' | 'abusive' | 'congratulation' | '' = '';
   showCongratulation = false;
+  showNegativeTooltip = false;
 
   radius = 27;
   circumference = 2 * Math.PI * this.radius;
@@ -407,6 +408,10 @@ countAllPassed(): number {
 
     if (!qualityResult || !qualityResult.success) return;
 
+    // Show tooltip when negative/sarcastic tone detected
+    this.showNegativeTooltip =
+      qualityResult.tone === 'negative' || qualityResult.tone === 'sarcastic';
+
     // Hide AI suggestion box immediately when all criteria pass (don't wait for 300ms animation)
     if (qualityResult.guidanceType === 'none') {
       this.showAiSuggestion = false;
@@ -569,6 +574,7 @@ countAllPassed(): number {
 
     if (this.userText.trim().length < 50) return;
 
+    this.showNegativeTooltip = false;
     this.isCheckingLanguage = true;
 
     const failingCriteria = this.guideItems
@@ -630,6 +636,7 @@ countAllPassed(): number {
     this.aiGuidance = '';
     this.guidanceType = '';
     this.showCongratulation = false;
+    this.showNegativeTooltip = false;
     this.phraseToCriterionMap = {};
     this.updateProgress(0);
 
