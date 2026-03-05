@@ -375,8 +375,8 @@
   bottom: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
-  background: #1f2937;
-  color: #fff;
+  background: #fef9c3;
+  color: #1a1a1a;
   padding: 8px 14px;
   border-radius: 8px;
   font-size: 13px;
@@ -392,7 +392,7 @@
   left: 50%;
   transform: translateX(-50%);
   border: 6px solid transparent;
-  border-top-color: #1f2937;
+  border-top-color: #fef9c3;
 }
 
 @keyframes tooltipFadeIn {
