@@ -93,7 +93,7 @@ export class AppreciationEditorModalComponent
             .filter(i => i.label !== 'Abusive Check' && i.status !== 'success')
             .map(i => i.label);
 
-          if (failingCriteria.length === 0) return EMPTY;
+          if (failingCriteria.length === 0 && !this.showCongratulation) return EMPTY;
 
           // Trigger A: check if text contains a known suggested phrase
           let targetCriterion: string | undefined;
