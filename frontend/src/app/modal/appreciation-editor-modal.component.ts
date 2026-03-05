@@ -302,12 +302,10 @@ countAllPassed(): number {
     if (this.ghostText) {
       if (this.userText.length <= this.previousRawText.length) {
         this.ghostText = '';
-        this.spellCorrections = [];
       } else {
         const newChars = this.userText.substring(this.previousRawText.length);
         if (/[a-zA-Z0-9]/.test(newChars)) {
           this.ghostText = '';
-          this.spellCorrections = [];
         }
       }
     }
