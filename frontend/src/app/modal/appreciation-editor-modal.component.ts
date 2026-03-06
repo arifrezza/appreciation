@@ -127,6 +127,7 @@ export class AppreciationEditorModalComponent
             }
             this.spellCorrections = (res.corrections || [])
               .filter(c => c.wrong.toLowerCase() !== c.fixed.toLowerCase())
+              .filter(c => c.wrong.toLowerCase().replace(/[^a-z]/g, '') !== c.fixed.toLowerCase().replace(/[^a-z]/g, ''))
               .filter(c => !this.ignoredWords.has(c.wrong.toLowerCase()));
           }
         }
