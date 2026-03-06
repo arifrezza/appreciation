@@ -94,11 +94,32 @@ class AutocompleteService @Inject()(
 	implicit val spellCorrectionReads: Reads[SpellCorrection] = Json.reads[SpellCorrection]
 	implicit val spellCorrectionWrites: Writes[SpellCorrection] = Json.writes[SpellCorrection]
 
+	private def editDistance(a: String, b: String): Int = {
+		val dp = Array.ofDim[Int](a.length + 1, b.length + 1)
+		for (i <- 0 to a.length) dp(i)(0) = i
+		for (j <- 0 to b.length) dp(0)(j) = j
+		for (i <- 1 to a.length; j <- 1 to b.length) {
+			val cost = if (a(i - 1) == b(j - 1)) 0 else 1
+			dp(i)(j) = Math.min(Math.min(dp(i - 1)(j) + 1, dp(i)(j - 1) + 1), dp(i - 1)(j - 1) + cost)
+		}
+		dp(a.length)(b.length)
+	}
+
+	private def isPlausibleTypo(wrong: String, fixed: String): Boolean = {
+		val w = wrong.toLowerCase
+		val f = fixed.toLowerCase
+		val dist = editDistance(w, f)
+		val maxLen = Math.max(w.length, f.length)
+		if (maxLen == 0) false
+		else dist.toDouble / maxLen <= 0.6
+	}
+
 	private def parseAutocompleteResponse(raw: String): AutocompleteResult = {
 		try {
 			val json = Json.parse(raw)
 			val completion = (json \ "completion").asOpt[String].getOrElse("").trim
 			val corrections = (json \ "corrections").asOpt[Seq[SpellCorrection]].getOrElse(Seq.empty)
+				.filter(c => isPlausibleTypo(c.wrong, c.fixed))
 			AutocompleteResult(completion, corrections)
 		} catch {
 			case _: Exception =>
