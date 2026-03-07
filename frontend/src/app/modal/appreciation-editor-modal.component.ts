@@ -184,6 +184,7 @@ export class AppreciationEditorModalComponent
   popoverIndex = 0;
   popoverLength = 0;
   popoverSuggestions: string[] = [];
+  private popoverHideTimeout: any = null;
 
   score = 0;
   isCheckingLanguage = false;
@@ -266,12 +267,25 @@ countAllPassed(): number {
       this.runSpellCheck();
     });
 
-    // Click listener for spell error underlines
-    editor.root.addEventListener('click', (e: MouseEvent) => {
+    // Hover listener for spell error underlines
+    editor.root.addEventListener('mouseover', (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       const spellEl = target.closest('.ql-spell-error') as HTMLElement;
       if (spellEl) {
+        if (this.popoverHideTimeout) {
+          clearTimeout(this.popoverHideTimeout);
+          this.popoverHideTimeout = null;
+        }
         this.openSpellPopover(spellEl);
+      }
+    });
+
+    editor.root.addEventListener('mouseout', (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('.ql-spell-error')) {
+        this.popoverHideTimeout = setTimeout(() => {
+          this.showSpellPopover = false;
+        }, 200);
       }
     });
 
@@ -876,6 +890,19 @@ countAllPassed(): number {
 
   get canAddToDictionary(): boolean {
     return this.spellCheckService.isLoaded() && !this.spellCheckService.check(this.popoverWord);
+  }
+
+  onPopoverMouseEnter(): void {
+    if (this.popoverHideTimeout) {
+      clearTimeout(this.popoverHideTimeout);
+      this.popoverHideTimeout = null;
+    }
+  }
+
+  onPopoverMouseLeave(): void {
+    this.popoverHideTimeout = setTimeout(() => {
+      this.showSpellPopover = false;
+    }, 200);
   }
 
   @HostListener('document:mousedown', ['$event'])

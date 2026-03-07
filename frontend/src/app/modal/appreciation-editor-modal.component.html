@@ -35,10 +35,13 @@
 
           <!-- Spell check popover -->
           <div class="spell-popover" *ngIf="showSpellPopover"
-               [style.top.px]="popoverTop" [style.left.px]="popoverLeft">
+               [style.top.px]="popoverTop" [style.left.px]="popoverLeft"
+               (mouseenter)="onPopoverMouseEnter()"
+               (mouseleave)="onPopoverMouseLeave()">
             <div class="spell-popover-header">
               <span class="spell-popover-word">{{ popoverWord }}</span>
               <span class="spell-popover-label">— misspelled</span>
+              <button class="spell-popover-close" (click)="showSpellPopover = false">&times;</button>
             </div>
             <div class="spell-popover-suggestions" *ngIf="popoverSuggestions.length > 0">
               <button class="spell-suggestion-btn" *ngFor="let s of popoverSuggestions"
