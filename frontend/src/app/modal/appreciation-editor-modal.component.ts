@@ -184,6 +184,7 @@ export class AppreciationEditorModalComponent
   popoverIndex = 0;
   popoverLength = 0;
   popoverSuggestions: string[] = [];
+  isAiCorrection = false;
   private popoverHideTimeout: any = null;
 
   score = 0;
@@ -807,6 +808,20 @@ countAllPassed(): number {
       this.quillEditor.formatText(err.index, err.length, 'spell-error', err.word, 'silent');
     }
     this.isApplyingSpellFormat = false;
+
+    // Tag AI vs local source on DOM elements for CSS styling
+    setTimeout(() => {
+      if (!this.quillEditor) return;
+      const spellEls = this.quillEditor.root.querySelectorAll('.ql-spell-error');
+      spellEls.forEach((el: Element) => {
+        const w = el.getAttribute('data-word')?.toLowerCase();
+        if (w && this.aiCorrections.has(w)) {
+          el.setAttribute('data-source', 'ai');
+        } else {
+          el.setAttribute('data-source', 'local');
+        }
+      });
+    }, 0);
   }
 
   private openSpellPopover(el: HTMLElement): void {
@@ -814,6 +829,7 @@ countAllPassed(): number {
     if (!word) return;
 
     const lowerWord = word.toLowerCase();
+    this.isAiCorrection = this.aiCorrections.has(lowerWord);
     const suggestions: string[] = [];
 
     // AI suggestion first (if available)

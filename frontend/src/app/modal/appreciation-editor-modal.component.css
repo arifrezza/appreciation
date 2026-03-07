@@ -178,13 +178,31 @@
   pointer-events: none;
 }
 
-/* Spell check underline */
+/* Spell check underline — local errors (red) */
 :host ::ng-deep .ql-spell-error {
-  text-decoration: underline wavy #ef4444;
+  text-decoration: underline solid rgba(220, 38, 38, 0.5);
+  text-decoration-thickness: 2.5px;
   text-decoration-skip-ink: none;
   text-underline-offset: 3px;
   cursor: pointer;
   background: transparent;
+  border-radius: 2px;
+  transition: background 0.15s ease, text-decoration-color 0.15s ease;
+}
+
+:host ::ng-deep .ql-spell-error:hover {
+  text-decoration-color: #dc2626;
+  background: rgba(220, 38, 38, 0.08);
+}
+
+/* Spell check underline — AI corrections (yellow/amber) */
+:host ::ng-deep .ql-spell-error[data-source="ai"] {
+  text-decoration-color: rgba(217, 119, 6, 0.5);
+}
+
+:host ::ng-deep .ql-spell-error[data-source="ai"]:hover {
+  text-decoration-color: #d97706;
+  background: rgba(217, 119, 6, 0.08);
 }
 
 /* Spell check popover */
@@ -201,41 +219,40 @@
   animation: fadeIn 0.15s ease;
 }
 
-.spell-popover-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 8px;
-  padding-bottom: 6px;
+/* Primary block: label + first suggestion as one hoverable unit */
+.spell-primary-block {
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  margin: -2px -4px 0;
   border-bottom: 1px solid #f3f4f6;
+  padding-bottom: 10px;
+  margin-bottom: 4px;
 }
 
-.spell-popover-word {
+.spell-primary-block:hover {
+  background: rgba(220, 38, 38, 0.06);
+}
+
+.spell-popover-ai .spell-primary-block:hover {
+  background: rgba(217, 119, 6, 0.06);
+}
+
+.spell-primary-label {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 3px;
+}
+
+.spell-primary-suggestion {
+  font-size: 15px;
   font-weight: 700;
   color: #dc2626;
-  font-size: 14px;
 }
 
-.spell-popover-label {
-  font-size: 12px;
-  color: #9ca3af;
-}
-
-.spell-popover-close {
-  margin-left: auto;
-  border: none;
-  background: none;
-  cursor: pointer;
-  font-size: 18px;
-  color: #9ca3af;
-  line-height: 1;
-  padding: 0 2px;
-  border-radius: 4px;
-  transition: color 0.15s ease;
-}
-
-.spell-popover-close:hover {
-  color: #374151;
+.spell-popover-ai .spell-primary-suggestion {
+  color: #d97706;
 }
 
 .spell-popover-suggestions {
@@ -281,10 +298,18 @@
   padding: 4px 8px;
   border-radius: 4px;
   transition: background 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .spell-popover-action-btn:hover {
   background: #f3f4f6;
+}
+
+.action-icon {
+  flex-shrink: 0;
+  vertical-align: middle;
 }
 
 .char-count-row {
