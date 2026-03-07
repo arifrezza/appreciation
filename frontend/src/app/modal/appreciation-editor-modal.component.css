@@ -180,7 +180,7 @@
 
 /* Spell check underline — local errors (red) */
 :host ::ng-deep .ql-spell-error {
-  text-decoration: underline solid rgba(220, 38, 38, 0.5);
+  text-decoration: underline solid rgba(220, 38, 38, 0.75);
   text-decoration-thickness: 2.5px;
   text-decoration-skip-ink: none;
   text-underline-offset: 3px;
@@ -310,6 +310,28 @@
 .action-icon {
   flex-shrink: 0;
   vertical-align: middle;
+}
+
+.spell-tab-hint {
+  font-size: 11px;
+  color: #9ca3af;
+  text-align: center;
+  padding-top: 6px;
+  margin-top: 4px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.spell-tab-hint kbd {
+  display: inline-block;
+  padding: 0 5px;
+  font-size: 10px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #6366f1;
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 3px;
+  line-height: 1.6;
 }
 
 .char-count-row {

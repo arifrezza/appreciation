@@ -172,6 +172,7 @@ export class AppreciationEditorModalComponent
   ghostWidth = 0;
   ghostIndent = 0;
   private aiCorrections: Map<string, string> = new Map();
+  get hasAiCorrections(): boolean { return this.aiCorrections.size > 0; }
   private ignoredWords: Set<string> = new Set();
   private isAutoCapitalizing = false;
   private spellCheckTimeout: any = null;
@@ -854,13 +855,18 @@ countAllPassed(): number {
       this.popoverLength = word.length;
     }
 
-    // Position popover below the word
+    // Position popover below the word, clamped within wrapper bounds
     const wrapperEl = this.quillEditor.root.closest('.textarea-wrapper') as HTMLElement;
     if (wrapperEl) {
       const rect = el.getBoundingClientRect();
       const wrapperRect = wrapperEl.getBoundingClientRect();
       this.popoverTop = rect.bottom - wrapperRect.top + 4;
-      this.popoverLeft = rect.left - wrapperRect.left;
+      let left = rect.left - wrapperRect.left;
+      const popoverWidth = 260;
+      if (left + popoverWidth > wrapperRect.width) {
+        left = Math.max(0, wrapperRect.width - popoverWidth);
+      }
+      this.popoverLeft = left;
     }
 
     this.showSpellPopover = true;
