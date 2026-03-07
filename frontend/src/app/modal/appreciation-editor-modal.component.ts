@@ -4,13 +4,16 @@ import {
   Output,
   EventEmitter,
   AfterViewInit,
-  OnDestroy
+  OnDestroy,
+  HostListener
 } from '@angular/core';
 
 import { LanguageService, QualityResponse, SpellCorrection } from '../services/language.service';
+import { SpellCheckService, SpellError } from '../services/spell-check.service';
 import { Subject, forkJoin, EMPTY } from 'rxjs';
 import { debounceTime, filter, switchMap, takeUntil, catchError } from 'rxjs/operators';
 import Quill from 'quill';
+import '../quill/spell-error-blot';
 
 type RuleStatus = 'neutral' | 'success' | 'error';
 
@@ -42,7 +45,10 @@ export class AppreciationEditorModalComponent
     }
   };
 
-  constructor(private languageService: LanguageService) { }
+  constructor(
+    private languageService: LanguageService,
+    private spellCheckService: SpellCheckService
+  ) { }
 
   /* =====================
      LIFECYCLE
@@ -125,10 +131,14 @@ export class AppreciationEditorModalComponent
               this.ghostText = this.normalizeCompletion(res.completion, this.userText);
               setTimeout(() => this.updateGhostPosition());
             }
-            this.spellCorrections = (res.corrections || [])
+            const filtered = (res.corrections || [])
               .filter(c => c.wrong.toLowerCase() !== c.fixed.toLowerCase())
               .filter(c => c.wrong.toLowerCase().replace(/[^a-z]/g, '') !== c.fixed.toLowerCase().replace(/[^a-z]/g, ''))
               .filter(c => !this.ignoredWords.has(c.wrong.toLowerCase()));
+
+            this.aiCorrections.clear();
+            filtered.forEach(c => this.aiCorrections.set(c.wrong.toLowerCase(), c.fixed));
+            this.runSpellCheck();
           }
         }
       });
@@ -161,9 +171,19 @@ export class AppreciationEditorModalComponent
   ghostLeft = 0;
   ghostWidth = 0;
   ghostIndent = 0;
-  spellCorrections: SpellCorrection[] = [];
+  private aiCorrections: Map<string, string> = new Map();
   private ignoredWords: Set<string> = new Set();
   private isAutoCapitalizing = false;
+  private spellCheckTimeout: any = null;
+  private lastCheckedText = '';
+  private isApplyingSpellFormat = false;
+  showSpellPopover = false;
+  popoverTop = 0;
+  popoverLeft = 0;
+  popoverWord = '';
+  popoverIndex = 0;
+  popoverLength = 0;
+  popoverSuggestions: string[] = [];
 
   score = 0;
   isCheckingLanguage = false;
@@ -238,6 +258,23 @@ countAllPassed(): number {
     this.quillEditor = editor;
     setTimeout(() => editor.focus(), 300);
 
+    // Disable browser native spell check
+    editor.root.setAttribute('spellcheck', 'false');
+
+    // Init frontend spell checker
+    this.spellCheckService.init().then(() => {
+      this.runSpellCheck();
+    });
+
+    // Click listener for spell error underlines
+    editor.root.addEventListener('click', (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const spellEl = target.closest('.ql-spell-error') as HTMLElement;
+      if (spellEl) {
+        this.openSpellPopover(spellEl);
+      }
+    });
+
     // Sync color picker "A" letter color with the selected text color
     const toolbar = editor.getModule('toolbar') as any;
     const colorLabel = toolbar?.container?.querySelector('.ql-color-picker .ql-color-label');
@@ -270,6 +307,9 @@ countAllPassed(): number {
   onContentChanged(event: any): void {
     if (!this.quillEditor) return;
     if (this.isAutoCapitalizing) return;
+    if (this.isApplyingSpellFormat) return;
+
+    this.showSpellPopover = false;
 
     this.autoCollapseSpaces();
     this.autoCapitalize();
@@ -277,6 +317,7 @@ countAllPassed(): number {
     this.plainText = this.quillEditor.getText().replace(/\n$/, '');
     this.userText = this.plainText;
     this.onTextChange();
+    this.scheduleSpellCheck();
   }
 
   private updateGhostPosition(): void {
@@ -385,7 +426,7 @@ countAllPassed(): number {
       this.animateScore(0);
       this.showAiSuggestion = false;
       this.ghostText = '';
-      this.spellCorrections = [];
+      this.aiCorrections.clear();
       this.lastRewriteAtTickCount = -1;
       this.showCongratulation = false;
       this.aiGuidance = 'Your message contains inappropriate language. Please revise it before continuing.';
@@ -624,8 +665,11 @@ countAllPassed(): number {
     this.aiText = '';
     this.showAiSuggestion = false;
     this.ghostText = '';
-    this.spellCorrections = [];
+    this.aiCorrections.clear();
     this.ignoredWords.clear();
+    this.spellCheckService.resetIgnored();
+    this.showSpellPopover = false;
+    this.lastCheckedText = '';
     this.score = 0;
     this.hasStartedTyping = false;
     this.lastGeneratedFor = '';
@@ -707,58 +751,156 @@ countAllPassed(): number {
     });
   }
 
-  get activeCorrections(): SpellCorrection[] {
-    const lower = this.userText.toLowerCase();
-    return this.spellCorrections
-      .filter(c => lower.includes(c.wrong.toLowerCase()));
+  /* =====================
+     SPELL CHECK (UNIFIED)
+  ====================== */
+
+  private scheduleSpellCheck(): void {
+    if (this.spellCheckTimeout) clearTimeout(this.spellCheckTimeout);
+    this.spellCheckTimeout = setTimeout(() => this.runSpellCheck(), 300);
   }
 
-  acceptCorrection(correction: SpellCorrection): void {
-    if (this.quillEditor) {
-      const text = this.quillEditor.getText().replace(/\n$/, '');
-      const regex = new RegExp(`\\b${this.escapeRegex(correction.wrong)}\\b`, 'i');
-      const match = regex.exec(text);
-      if (match) {
-        const idx = match.index;
-        this.quillEditor.deleteText(idx, correction.wrong.length);
-        this.quillEditor.insertText(idx, correction.fixed);
+  private runSpellCheck(): void {
+    if (!this.spellCheckService.isLoaded() || this.isApplyingSpellFormat || this.isAutoCapitalizing) return;
+    if (!this.quillEditor) return;
+
+    const text = this.quillEditor.getText().replace(/\n$/, '');
+    if (text === this.lastCheckedText && this.aiCorrections.size === 0) return;
+    this.lastCheckedText = text;
+
+    // 1. Get typo-js errors
+    const typoErrors = this.spellCheckService.checkText(text);
+
+    // 2. Add AI-only corrections as additional errors
+    const allErrors: SpellError[] = [...typoErrors];
+    const typoPositions = new Set(typoErrors.map(e => e.index));
+
+    this.aiCorrections.forEach((fixed, wrong) => {
+      const regex = new RegExp(`\\b${this.escapeRegex(wrong)}\\b`, 'gi');
+      let match;
+      while ((match = regex.exec(text)) !== null) {
+        if (!typoPositions.has(match.index)) {
+          allErrors.push({ word: match[0], index: match.index, length: match[0].length });
+        }
       }
+    });
+
+    // 3. Apply spell-error format
+    this.isApplyingSpellFormat = true;
+    const length = this.quillEditor.getLength();
+    this.quillEditor.formatText(0, length, 'spell-error', false, 'silent');
+    for (const err of allErrors) {
+      this.quillEditor.formatText(err.index, err.length, 'spell-error', err.word, 'silent');
     }
-    this.spellCorrections = this.spellCorrections
-      .filter(c => c.wrong !== correction.wrong);
-    this.plainText = this.quillEditor?.getText().replace(/\n$/, '') || '';
+    this.isApplyingSpellFormat = false;
+  }
+
+  private openSpellPopover(el: HTMLElement): void {
+    const word = el.getAttribute('data-word') || '';
+    if (!word) return;
+
+    const lowerWord = word.toLowerCase();
+    const suggestions: string[] = [];
+
+    // AI suggestion first (if available)
+    const aiFix = this.aiCorrections.get(lowerWord);
+    if (aiFix) suggestions.push(aiFix);
+
+    // Then typo-js suggestions (excluding duplicates)
+    if (this.spellCheckService.isLoaded() && !this.spellCheckService.check(word)) {
+      const typoSuggestions = this.spellCheckService.suggest(word);
+      typoSuggestions.forEach(s => {
+        if (!suggestions.includes(s)) suggestions.push(s);
+      });
+    }
+
+    this.popoverSuggestions = suggestions;
+    this.popoverWord = word;
+
+    // Find Quill index for this word
+    const blot = Quill.find(el);
+    if (blot) {
+      this.popoverIndex = this.quillEditor.getIndex(blot as any);
+      this.popoverLength = word.length;
+    }
+
+    // Position popover below the word
+    const wrapperEl = this.quillEditor.root.closest('.textarea-wrapper') as HTMLElement;
+    if (wrapperEl) {
+      const rect = el.getBoundingClientRect();
+      const wrapperRect = wrapperEl.getBoundingClientRect();
+      this.popoverTop = rect.bottom - wrapperRect.top + 4;
+      this.popoverLeft = rect.left - wrapperRect.left;
+    }
+
+    this.showSpellPopover = true;
+  }
+
+  applySuggestion(suggestion: string): void {
+    if (!this.quillEditor) return;
+
+    // Preserve formatting at the position
+    const format = this.quillEditor.getFormat(this.popoverIndex, this.popoverLength);
+    delete (format as any)['spell-error'];
+
+    this.quillEditor.deleteText(this.popoverIndex, this.popoverLength, 'user');
+    this.quillEditor.insertText(this.popoverIndex, suggestion, format, 'user');
+
+    // Remove from AI corrections if it was an AI correction
+    this.aiCorrections.delete(this.popoverWord.toLowerCase());
+
+    this.showSpellPopover = false;
+    this.plainText = this.quillEditor.getText().replace(/\n$/, '') || '';
     this.userText = this.plainText;
     this.previousRawText = this.userText;
+    this.lastCheckedText = '';
     this.onTextChange();
   }
 
-  acceptAllCorrections(): void {
-    if (this.quillEditor) {
+  ignoreSpellWord(): void {
+    const lower = this.popoverWord.toLowerCase();
+    this.spellCheckService.ignore(this.popoverWord);
+    this.ignoredWords.add(lower);
+    this.aiCorrections.delete(lower);
+    this.showSpellPopover = false;
+    this.lastCheckedText = '';
+    this.runSpellCheck();
+  }
+
+  addToDictionary(): void {
+    this.spellCheckService.addToDictionary(this.popoverWord);
+    this.showSpellPopover = false;
+    this.lastCheckedText = '';
+    this.runSpellCheck();
+  }
+
+  get canAddToDictionary(): boolean {
+    return this.spellCheckService.isLoaded() && !this.spellCheckService.check(this.popoverWord);
+  }
+
+  @HostListener('document:mousedown', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.showSpellPopover) return;
+    const target = event.target as HTMLElement;
+    if (target.closest('.spell-popover') || target.closest('.ql-spell-error')) return;
+    this.showSpellPopover = false;
+  }
+
+  private applyAllAiCorrections(): void {
+    if (this.quillEditor && this.aiCorrections.size > 0) {
       let text = this.quillEditor.getText().replace(/\n$/, '');
-      for (const c of this.activeCorrections) {
-        const regex = new RegExp(`\\b${this.escapeRegex(c.wrong)}\\b`, 'gi');
-        text = text.replace(regex, c.fixed);
-      }
+      this.aiCorrections.forEach((fixed, wrong) => {
+        const regex = new RegExp(`\\b${this.escapeRegex(wrong)}\\b`, 'gi');
+        text = text.replace(regex, fixed);
+      });
       this.quillEditor.setText(text);
+      this.aiCorrections.clear();
+      this.plainText = this.quillEditor.getText().replace(/\n$/, '') || '';
+      this.userText = this.plainText;
+      this.previousRawText = this.userText;
+      this.lastCheckedText = '';
+      this.onTextChange();
     }
-    this.spellCorrections = [];
-    this.plainText = this.quillEditor?.getText().replace(/\n$/, '') || '';
-    this.userText = this.plainText;
-    this.previousRawText = this.userText;
-    this.onTextChange();
-  }
-
-  dismissCorrection(correction: SpellCorrection): void {
-    this.ignoredWords.add(correction.wrong.toLowerCase());
-    this.spellCorrections = this.spellCorrections
-      .filter(c => c.wrong !== correction.wrong);
-  }
-
-  dismissAllCorrections(): void {
-    this.activeCorrections.forEach(c =>
-      this.ignoredWords.add(c.wrong.toLowerCase())
-    );
-    this.spellCorrections = [];
   }
 
   private normalizeCompletion(completion: string, userText: string): string {
@@ -802,6 +944,7 @@ countAllPassed(): number {
 
       // Preserve existing formatting (bold, italic, underline, color) at this position
       const format = this.quillEditor.getFormat(idx, 1);
+      delete (format as any)['spell-error'];
 
       this.isAutoCapitalizing = true;
       this.quillEditor.deleteText(idx, 1, 'silent');
@@ -834,9 +977,9 @@ countAllPassed(): number {
   }
 
   onKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Tab' && !this.ghostText && this.activeCorrections.length > 0) {
+    if (event.key === 'Tab' && !this.ghostText && this.aiCorrections.size > 0) {
       event.preventDefault();
-      this.acceptAllCorrections();
+      this.applyAllAiCorrections();
       return;
     }
     if (event.key === 'Tab' && this.ghostText) {
@@ -851,17 +994,17 @@ countAllPassed(): number {
       // Capture active formats before any text manipulation (setText clears them)
       const activeFormats = this.quillEditor.getFormat();
 
-      // Apply spelling corrections first
+      // Apply AI corrections first
       const currentText = this.quillEditor.getText().replace(/\n$/, '');
       let correctedText = currentText;
-      for (const c of this.activeCorrections) {
-        const regex = new RegExp(`\\b${this.escapeRegex(c.wrong)}\\b`, 'gi');
-        correctedText = correctedText.replace(regex, c.fixed);
-      }
+      this.aiCorrections.forEach((fixed, wrong) => {
+        const regex = new RegExp(`\\b${this.escapeRegex(wrong)}\\b`, 'gi');
+        correctedText = correctedText.replace(regex, fixed);
+      });
       if (correctedText !== currentText) {
         this.quillEditor.setText(correctedText);
       }
-      this.spellCorrections = [];
+      this.aiCorrections.clear();
 
       // Append ghost text at the end, preserving all active formats
       const len = this.quillEditor.getLength() - 1; // -1 for trailing \n
@@ -877,6 +1020,7 @@ countAllPassed(): number {
       this.userText = this.plainText;
       this.ghostText = '';
       this.previousRawText = this.userText;
+      this.lastCheckedText = '';
 
       // Move cursor to end
       this.quillEditor.setSelection(this.quillEditor.getLength(), 0);

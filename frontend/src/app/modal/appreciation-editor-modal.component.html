@@ -32,26 +32,22 @@
             <span class="ghost-completion">{{ displayGhostText }}</span>
             <span class="ghost-hint-inline"> Press Tab ↹</span>
           </div>
-        </div>
 
-        <!-- Spell correction chip bar -->
-        <div class="spell-bar" *ngIf="activeCorrections.length > 0">
-          <span class="spell-bar-label">Typo fixes:</span>
-          <div class="spell-chips">
-            <div class="spell-chip" *ngFor="let c of activeCorrections">
-              <span class="spell-wrong">{{ c.wrong }}</span>
-              <span class="spell-arrow">&rarr;</span>
-              <span class="spell-fixed">{{ c.fixed }}</span>
-              <button class="spell-accept" (click)="acceptCorrection(c)" title="Accept correction">&check;</button>
-              <button class="spell-dismiss" (click)="dismissCorrection(c)" title="Ignore this word">&times;</button>
+          <!-- Spell check popover -->
+          <div class="spell-popover" *ngIf="showSpellPopover"
+               [style.top.px]="popoverTop" [style.left.px]="popoverLeft">
+            <div class="spell-popover-header">
+              <span class="spell-popover-word">{{ popoverWord }}</span>
+              <span class="spell-popover-label">— misspelled</span>
             </div>
-          </div>
-          <span class="spell-tab-hint" *ngIf="activeCorrections.length === 1">
-            Press <kbd class="tab-key">Tab <span class="tab-icon">↹</span></kbd> to Fix All Typo
-          </span>
-          <div class="spell-bulk" *ngIf="activeCorrections.length >= 2">
-            <button class="spell-accept-all" (click)="acceptAllCorrections()">Fix all <kbd class="tab-key-inline">Tab <span class="tab-icon">↹</span></kbd></button>
-            <button class="spell-dismiss-all" (click)="dismissAllCorrections()">Ignore all</button>
+            <div class="spell-popover-suggestions" *ngIf="popoverSuggestions.length > 0">
+              <button class="spell-suggestion-btn" *ngFor="let s of popoverSuggestions"
+                      (click)="applySuggestion(s)">{{ s }}</button>
+            </div>
+            <div class="spell-popover-actions">
+              <button class="spell-popover-action-btn" (click)="ignoreSpellWord()">Ignore</button>
+              <button class="spell-popover-action-btn" *ngIf="canAddToDictionary" (click)="addToDictionary()">Add to Dictionary</button>
+            </div>
           </div>
         </div>
 
