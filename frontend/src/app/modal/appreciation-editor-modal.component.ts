@@ -860,6 +860,13 @@ countAllPassed(): number {
     this.quillEditor.deleteText(this.popoverIndex, this.popoverLength, 'user');
     this.quillEditor.insertText(this.popoverIndex, suggestion, format, 'user');
 
+    // Ensure a space exists after the replaced word
+    const afterIndex = this.popoverIndex + suggestion.length;
+    const textAfter = this.quillEditor.getText(afterIndex, 1);
+    if (textAfter && textAfter !== ' ' && textAfter !== '\n') {
+      this.quillEditor.insertText(afterIndex, ' ', 'user');
+    }
+
     // Remove from AI corrections if it was an AI correction
     this.aiCorrections.delete(this.popoverWord.toLowerCase());
 
