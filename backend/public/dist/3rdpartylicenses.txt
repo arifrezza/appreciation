@@ -714,6 +714,9 @@ Apache-2.0
  
 
 
+typo-js
+BSD-3-Clause
+
 zone.js
 MIT
 The MIT License
