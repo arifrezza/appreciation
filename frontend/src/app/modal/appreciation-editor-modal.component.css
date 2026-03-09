@@ -220,38 +220,44 @@
 .spell-popover {
   position: absolute;
   z-index: 10;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-  padding: 10px 14px;
-  min-width: 180px;
-  max-width: 280px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 16px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  padding: 0;
+  width: 260px;
+  overflow: hidden;
   animation: fadeIn 0.15s ease;
 }
 
 /* Primary block: label + first suggestion as one hoverable unit */
 .spell-primary-block {
-  padding: 8px 12px;
-  border-radius: 8px;
+  padding: 10px 12px;
+  border-radius: 0;
   cursor: pointer;
-  transition: background 0.15s ease;
-  margin: -2px -4px 0;
-  border-bottom: 1px solid #f3f4f6;
+  transition: all 0.2s ease;
+  margin: 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   padding-bottom: 10px;
-  margin-bottom: 4px;
+  margin-bottom: 0;
 }
 
 .spell-primary-block:hover {
-  background: rgba(220, 38, 38, 0.06);
+  background: #4f46e5;
+}
+
+.spell-primary-block:hover .spell-primary-label,
+.spell-primary-block:hover .spell-primary-suggestion {
+  color: #ffffff;
 }
 
 .spell-popover-ai .spell-primary-block:hover {
-  background: rgba(220, 38, 38, 0.06);
+  background: #4f46e5;
 }
 
 .spell-popover-grammar .spell-primary-block:hover {
-  background: rgba(37, 99, 235, 0.06);
+  background: #4f46e5;
 }
 
 .spell-primary-label {
@@ -263,67 +269,78 @@
 .spell-primary-suggestion {
   font-size: 15px;
   font-weight: 700;
-  color: #dc2626;
+  color: #000000;
 }
 
 .spell-popover-ai .spell-primary-suggestion {
-  color: #dc2626;
+  color: #000000;
 }
 
 .spell-popover-grammar .spell-primary-suggestion {
-  color: #2563eb;
+  color: #000000;
 }
 
 .spell-popover-suggestions {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  margin-bottom: 8px;
+  padding: 6px;
+  margin-bottom: 0;
 }
 
 .spell-suggestion-btn {
   display: block;
   width: 100%;
   text-align: left;
-  padding: 6px 10px;
+  padding: 10px 12px;
   border: none;
   background: none;
-  border-radius: 6px;
+  border-radius: 10px;
   cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  color: #2563eb;
-  transition: background 0.15s ease;
+  font-size: 14px;
+  font-weight: 500;
+  color: #18181b;
+  transition: all 0.2s ease;
 }
 
 .spell-suggestion-btn:hover {
-  background: #eff6ff;
+  background: #4f46e5;
+  color: #ffffff;
 }
 
 .spell-popover-actions {
-  display: flex;
-  gap: 6px;
-  padding-top: 6px;
-  border-top: 1px solid #f3f4f6;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 6px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  background: rgba(0, 0, 0, 0.01);
 }
 
 .spell-popover-action-btn {
   border: none;
-  background: none;
+  background: transparent;
   cursor: pointer;
-  font-size: 11px;
-  font-weight: 600;
-  color: #6b7280;
-  padding: 4px 8px;
-  border-radius: 4px;
-  transition: background 0.15s ease;
+  font-size: 12px;
+  font-weight: 500;
+  color: #71717a;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background 0.2s;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
 }
 
+.spell-popover-action-btn:first-child {
+  border-right: none;
+}
+
 .spell-popover-action-btn:hover {
-  background: #f3f4f6;
+  background: white;
+  color: #18181b;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .action-icon {
@@ -334,24 +351,25 @@
 .spell-tab-hint {
   font-size: 13px;
   font-weight: 500;
-  color: #000000;
+  color: #ffffff;
   text-align: center;
-  padding: 8px 12px;
-  margin-top: 4px;
-  border-top: 1px solid #e5e7eb;
-  width: 100%;
+  padding: 10px 16px;
+  margin: 0;
+  background: #18181b;
+  border-radius: 0;
+  width: auto;
   box-sizing: border-box;
 }
 
 .spell-tab-hint kbd {
   display: inline-block;
-  padding: 1px 6px;
+  padding: 2px 6px;
   font-size: 12px;
   font-weight: 700;
   font-family: inherit;
-  color: #000000;
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
+  color: #18181b;
+  background: #ffffff;
+  border: none;
   border-radius: 4px;
   line-height: 1.6;
 }
