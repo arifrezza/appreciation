@@ -37,15 +37,16 @@ class AutocompleteService @Inject()(
 			  |1. "completion": the remaining words to naturally finish the current sentence. Do NOT repeat any text the user has already written. Keep it concise — one sentence fragment, no more than 20 words.
 			  |   Use proper sentence punctuation. If the completion starts a new clause, prefer a period (.) over semicolons (;) or colons (:). Capitalize the first letter after any sentence-ending punctuation (. ! ?).
 			  |   If the user's text does not end with sentence-ending punctuation (. ! ?), begin the completion in lowercase since it continues the existing sentence.
-			  |2. "corrections": an array of objects with "wrong" (misspelled word as it appears) and "fixed" (corrected word) for any misspelled words in the user's text.
+			  |2. "corrections": an array of objects with "wrong" (the incorrect word or phrase as it appears), "fixed" (the corrected version), and "type" ("spelling" or "grammar") for any spelling or grammar errors in the user's text.
 			  |
 			  |Rules for corrections:
-			  |- IMPORTANT: Flag ALL misspelled words in the user's text in a single response. Do not leave any misspellings uncorrected.
-			  |- Only flag genuinely misspelled words
-			  |- Do NOT replace correctly-spelled words with synonyms, antonyms, or the same word. Corrections are for spelling errors ONLY, not for improving tone or sentiment. Do NOT include a word in corrections if it is spelled correctly (e.g., do NOT flag "poor", "bad", or any other valid English word)
+			  |- IMPORTANT: Flag ALL spelling and grammar errors in the user's text in a single response.
+			  |- Flag genuinely misspelled words (type: "spelling")
+			  |- Flag grammar errors such as missing auxiliary verbs, subject-verb disagreement, wrong tense, or missing articles (type: "grammar"). For grammar errors, "wrong" should be the minimal incorrect phrase and "fixed" should be the corrected phrase (e.g., {"wrong": "you done", "fixed": "you have done", "type": "grammar"}, {"wrong": "he work", "fixed": "he works", "type": "grammar"})
+			  |- Do NOT replace correctly-spelled words with synonyms, antonyms, or the same word. Do NOT change tone or sentiment (e.g., do NOT flag "poor", "bad", or any other valid English word)
 			  |- Do NOT correct proper nouns, names, abbreviations, or acronyms
 			  |- Do NOT correct informal but valid phrasing (e.g., "gonna", "wanna")
-			  |- If no typos exist, return an empty array for corrections
+			  |- If no errors exist, return an empty array for corrections
 			  |
 			  |Return ONLY the raw JSON object. No markdown fencing, no explanation, no labels.""".stripMargin
 
@@ -88,7 +89,7 @@ class AutocompleteService @Inject()(
 			lower.contains("inappropriate language")
 	}
 
-	case class SpellCorrection(wrong: String, fixed: String)
+	case class SpellCorrection(wrong: String, fixed: String, `type`: String = "spelling")
 	case class AutocompleteResult(completion: String, corrections: Seq[SpellCorrection])
 
 	implicit val spellCorrectionReads: Reads[SpellCorrection] = Json.reads[SpellCorrection]
@@ -119,7 +120,7 @@ class AutocompleteService @Inject()(
 			val json = Json.parse(raw)
 			val completion = (json \ "completion").asOpt[String].getOrElse("").trim
 			val corrections = (json \ "corrections").asOpt[Seq[SpellCorrection]].getOrElse(Seq.empty)
-				.filter(c => isPlausibleTypo(c.wrong, c.fixed))
+				.filter(c => c.`type` == "grammar" || isPlausibleTypo(c.wrong, c.fixed))
 			AutocompleteResult(completion, corrections)
 		} catch {
 			case _: Exception =>
