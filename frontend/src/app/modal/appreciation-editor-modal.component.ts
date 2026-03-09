@@ -10,6 +10,7 @@ import {
 
 import { LanguageService, QualityResponse, SpellCorrection } from '../services/language.service';
 import { SpellCheckService, SpellError } from '../services/spell-check.service';
+import { AbbreviationDictionaryService } from '../services/abbreviation-dictionary.service';
 import { Subject, forkJoin, EMPTY } from 'rxjs';
 import { debounceTime, filter, switchMap, takeUntil, catchError } from 'rxjs/operators';
 import Quill from 'quill';
@@ -47,7 +48,8 @@ export class AppreciationEditorModalComponent
 
   constructor(
     private languageService: LanguageService,
-    private spellCheckService: SpellCheckService
+    private spellCheckService: SpellCheckService,
+    private abbreviationDictionaryService: AbbreviationDictionaryService
   ) { }
 
   /* =====================
@@ -187,6 +189,8 @@ export class AppreciationEditorModalComponent
   popoverSuggestions: string[] = [];
   isAiCorrection = false;
   isGrammarCorrection = false;
+  isAbbreviationCorrection = false;
+  private abbreviationErrors: Map<string, string> = new Map();
   private popoverHideTimeout: any = null;
 
   score = 0;
@@ -683,8 +687,10 @@ countAllPassed(): number {
     this.showAiSuggestion = false;
     this.ghostText = '';
     this.aiCorrections.clear();
+    this.abbreviationErrors.clear();
     this.ignoredWords.clear();
     this.spellCheckService.resetIgnored();
+    this.abbreviationDictionaryService.resetIgnored();
     this.showSpellPopover = false;
     this.lastCheckedText = '';
     this.score = 0;
@@ -788,8 +794,17 @@ countAllPassed(): number {
     // 1. Get typo-js errors
     const typoErrors = this.spellCheckService.checkText(text);
 
-    // 2. Add AI-only corrections as additional errors
-    const allErrors: SpellError[] = [...typoErrors];
+    // 1b. Get abbreviation/informal language errors
+    const abbrevErrors = this.abbreviationDictionaryService.checkText(text);
+    const abbrevPositions = new Set(abbrevErrors.map(e => e.index));
+    this.abbreviationErrors.clear();
+    abbrevErrors.forEach(e => this.abbreviationErrors.set(e.word.toLowerCase(), e.formal));
+
+    // 2. Add AI-only corrections as additional errors (abbreviations take priority over typos)
+    const allErrors: SpellError[] = [
+      ...typoErrors.filter(e => !abbrevPositions.has(e.index)),
+      ...abbrevErrors.map(e => ({ word: e.word, index: e.index, length: e.length }))
+    ];
     const typoPositions = new Set(typoErrors.map(e => e.index));
 
     this.aiCorrections.forEach((correction, wrong) => {
@@ -818,9 +833,13 @@ countAllPassed(): number {
       spellEls.forEach((el: Element) => {
         const w = el.getAttribute('data-word')?.toLowerCase();
         const correction = w ? this.aiCorrections.get(w) : undefined;
+        const abbrevFormal = w ? this.abbreviationDictionaryService.getFormal(w) : undefined;
         if (correction) {
           el.setAttribute('data-source', 'ai');
           el.setAttribute('data-type', correction.type);
+        } else if (abbrevFormal) {
+          el.setAttribute('data-source', 'local');
+          el.setAttribute('data-type', 'abbreviation');
         } else {
           el.setAttribute('data-source', 'local');
           el.setAttribute('data-type', 'spelling');
@@ -835,12 +854,19 @@ countAllPassed(): number {
 
     const lowerWord = word.toLowerCase();
     const aiCorrection = this.aiCorrections.get(lowerWord);
+    const abbrevFormal = this.abbreviationDictionaryService.getFormal(lowerWord);
     this.isAiCorrection = !!aiCorrection;
     this.isGrammarCorrection = aiCorrection?.type === 'grammar';
+    this.isAbbreviationCorrection = !!abbrevFormal;
     const suggestions: string[] = [];
 
-    // AI suggestion first (if available)
-    if (aiCorrection) suggestions.push(aiCorrection.fixed);
+    // Abbreviation formal replacement first (if applicable)
+    if (abbrevFormal) {
+      suggestions.push(abbrevFormal);
+    } else if (aiCorrection) {
+      // AI suggestion (if available and not an abbreviation)
+      suggestions.push(aiCorrection.fixed);
+    }
 
     // Then typo-js suggestions (excluding duplicates)
     if (this.spellCheckService.isLoaded() && !this.spellCheckService.check(word)) {
@@ -907,6 +933,10 @@ countAllPassed(): number {
 
   ignoreSpellWord(): void {
     const lower = this.popoverWord.toLowerCase();
+    if (this.isAbbreviationCorrection) {
+      this.abbreviationDictionaryService.ignore(this.popoverWord);
+      this.abbreviationErrors.delete(lower);
+    }
     this.spellCheckService.ignore(this.popoverWord);
     this.ignoredWords.add(lower);
     this.aiCorrections.delete(lower);
@@ -916,6 +946,10 @@ countAllPassed(): number {
   }
 
   addToDictionary(): void {
+    if (this.isAbbreviationCorrection) {
+      this.abbreviationDictionaryService.addToDictionary(this.popoverWord);
+      this.abbreviationErrors.delete(this.popoverWord.toLowerCase());
+    }
     this.spellCheckService.addToDictionary(this.popoverWord);
     this.showSpellPopover = false;
     this.lastCheckedText = '';
@@ -923,6 +957,7 @@ countAllPassed(): number {
   }
 
   get canAddToDictionary(): boolean {
+    if (this.isAbbreviationCorrection) return true;
     return this.spellCheckService.isLoaded() && !this.spellCheckService.check(this.popoverWord);
   }
 
