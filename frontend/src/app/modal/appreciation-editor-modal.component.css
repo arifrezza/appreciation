@@ -205,15 +205,15 @@
   background: rgba(220, 38, 38, 0.08);
 }
 
-/* Spell check underline — AI grammar corrections (blue dashed) */
+/* Spell check underline — AI grammar corrections (orange) */
 :host ::ng-deep .ql-spell-error[data-type="grammar"] {
   text-decoration-style: solid;
-  text-decoration-color: rgba(37, 99, 235, 0.75);
+  text-decoration-color: rgba(234, 88, 12, 0.75);
 }
 
 :host ::ng-deep .ql-spell-error[data-type="grammar"]:hover {
-  text-decoration-color: #2563eb;
-  background: rgba(37, 99, 235, 0.08);
+  text-decoration-color: #ea580c;
+  background: rgba(234, 88, 12, 0.08);
 }
 
 /* Spell check popover */
@@ -277,7 +277,7 @@
 }
 
 .spell-popover-grammar .spell-primary-suggestion {
-  color: #2563eb;
+  color: #ea580c;
 }
 
 .spell-popover-suggestions {
