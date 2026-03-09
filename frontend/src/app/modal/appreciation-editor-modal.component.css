@@ -338,8 +338,8 @@
 }
 
 .spell-popover-action-btn:hover {
-  background: white;
-  color: #18181b;
+  background: #eff6ff;
+  color: #1e40af;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
