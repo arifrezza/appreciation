@@ -207,8 +207,8 @@
 
 /* Spell check underline — AI grammar corrections (blue dashed) */
 :host ::ng-deep .ql-spell-error[data-type="grammar"] {
-  text-decoration-style: dashed;
-  text-decoration-color: rgba(37, 99, 235, 0.6);
+  text-decoration-style: solid;
+  text-decoration-color: rgba(37, 99, 235, 0.75);
 }
 
 :host ::ng-deep .ql-spell-error[data-type="grammar"]:hover {
