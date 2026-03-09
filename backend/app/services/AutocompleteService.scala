@@ -46,7 +46,7 @@ class AutocompleteService @Inject()(
 			  |  c) Subject-verb disagreement (e.g., "he work" should be "he works") → type: "grammar"
 			  |  d) Wrong tense usage (e.g., "I seen" should be "I have seen", "she come yesterday" should be "she came yesterday") → type: "grammar"
 			  |  e) Missing or wrong articles (e.g., "he is good person" should be "he is a good person") → type: "grammar"
-			  |  f) Missing prepositions (e.g., "good working the project" should be "good working on the project") → type: "grammar"
+			  |  f) Missing prepositions (e.g., "good working the project" should be "good working on the project", "help login module" should be "help with the login module") → type: "grammar"
 			  |
 			  |For grammar errors, "wrong" must be the minimal incorrect phrase from the user's text and "fixed" must be the corrected phrase.
 			  |Examples:
@@ -54,6 +54,8 @@ class AutocompleteService @Inject()(
 			  |  - "he work very hard" → {"wrong": "he work", "fixed": "he works", "type": "grammar"}
 			  |  - "I seen your effort" → {"wrong": "I seen", "fixed": "I have seen", "type": "grammar"}
 			  |  - "she definately helped" → {"wrong": "definately", "fixed": "definitely", "type": "spelling"}
+			  |  - "help login module" → {"wrong": "help login module", "fixed": "help with the login module", "type": "grammar"}
+			  |  - "Thank u" → {"wrong": "u", "fixed": "you", "type": "spelling"}
 			  |
 			  |You MUST report every error found. Do NOT skip grammar errors just because you understand the intended meaning.
 			  |
@@ -125,8 +127,10 @@ class AutocompleteService @Inject()(
 		val w = wrong.toLowerCase
 		val f = fixed.toLowerCase
 		val dist = editDistance(w, f)
+		val minLen = Math.min(w.length, f.length)
 		val maxLen = Math.max(w.length, f.length)
 		if (maxLen == 0) false
+		else if (minLen <= 2) dist <= 2
 		else dist.toDouble / maxLen <= 0.6
 	}
 
