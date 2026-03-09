@@ -39,10 +39,25 @@ class AutocompleteService @Inject()(
 			  |   If the user's text does not end with sentence-ending punctuation (. ! ?), begin the completion in lowercase since it continues the existing sentence.
 			  |2. "corrections": an array of objects with "wrong" (the incorrect word or phrase as it appears), "fixed" (the corrected version), and "type" ("spelling" or "grammar") for any spelling or grammar errors in the user's text.
 			  |
+			  |CRITICAL — Grammar & Spelling Check Instructions (do this FIRST, before writing the completion):
+			  |Before generating the completion, carefully re-read the user's text word by word and check for ALL of the following:
+			  |  a) Misspelled words → type: "spelling"
+			  |  b) Missing auxiliary verbs (e.g., "you done" should be "you have done") → type: "grammar"
+			  |  c) Subject-verb disagreement (e.g., "he work" should be "he works") → type: "grammar"
+			  |  d) Wrong tense usage (e.g., "I seen" should be "I have seen", "she come yesterday" should be "she came yesterday") → type: "grammar"
+			  |  e) Missing or wrong articles (e.g., "he is good person" should be "he is a good person") → type: "grammar"
+			  |  f) Missing prepositions (e.g., "good working the project" should be "good working on the project") → type: "grammar"
+			  |
+			  |For grammar errors, "wrong" must be the minimal incorrect phrase from the user's text and "fixed" must be the corrected phrase.
+			  |Examples:
+			  |  - "You done a good job" → {"wrong": "You done", "fixed": "You have done", "type": "grammar"}
+			  |  - "he work very hard" → {"wrong": "he work", "fixed": "he works", "type": "grammar"}
+			  |  - "I seen your effort" → {"wrong": "I seen", "fixed": "I have seen", "type": "grammar"}
+			  |  - "she definately helped" → {"wrong": "definately", "fixed": "definitely", "type": "spelling"}
+			  |
+			  |You MUST report every error found. Do NOT skip grammar errors just because you understand the intended meaning.
+			  |
 			  |Rules for corrections:
-			  |- IMPORTANT: Flag ALL spelling and grammar errors in the user's text in a single response.
-			  |- Flag genuinely misspelled words (type: "spelling")
-			  |- Flag grammar errors such as missing auxiliary verbs, subject-verb disagreement, wrong tense, or missing articles (type: "grammar"). For grammar errors, "wrong" should be the minimal incorrect phrase and "fixed" should be the corrected phrase (e.g., {"wrong": "you done", "fixed": "you have done", "type": "grammar"}, {"wrong": "he work", "fixed": "he works", "type": "grammar"})
 			  |- Do NOT replace correctly-spelled words with synonyms, antonyms, or the same word. Do NOT change tone or sentiment (e.g., do NOT flag "poor", "bad", or any other valid English word)
 			  |- Do NOT correct proper nouns, names, abbreviations, or acronyms
 			  |- Do NOT correct informal but valid phrasing (e.g., "gonna", "wanna")
