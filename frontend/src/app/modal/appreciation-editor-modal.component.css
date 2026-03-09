@@ -195,14 +195,14 @@
   background: rgba(220, 38, 38, 0.08);
 }
 
-/* Spell check underline — AI corrections (yellow/amber) */
+/* Spell check underline — AI corrections (red, same as local) */
 :host ::ng-deep .ql-spell-error[data-source="ai"] {
-  text-decoration-color: rgba(217, 119, 6, 0.5);
+  text-decoration-color: rgba(220, 38, 38, 0.75);
 }
 
 :host ::ng-deep .ql-spell-error[data-source="ai"]:hover {
-  text-decoration-color: #d97706;
-  background: rgba(217, 119, 6, 0.08);
+  text-decoration-color: #dc2626;
+  background: rgba(220, 38, 38, 0.08);
 }
 
 /* Spell check underline — AI grammar corrections (blue dashed) */
