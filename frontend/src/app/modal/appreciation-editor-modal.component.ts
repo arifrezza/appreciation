@@ -137,7 +137,7 @@ export class AppreciationEditorModalComponent
               .filter(c => !this.ignoredWords.has(c.wrong.toLowerCase()));
 
             this.aiCorrections.clear();
-            filtered.forEach(c => this.aiCorrections.set(c.wrong.toLowerCase(), c.fixed));
+            filtered.forEach(c => this.aiCorrections.set(c.wrong.toLowerCase(), { fixed: c.fixed, type: c.type || 'spelling' }));
             this.runSpellCheck();
           }
         }
@@ -171,7 +171,7 @@ export class AppreciationEditorModalComponent
   ghostLeft = 0;
   ghostWidth = 0;
   ghostIndent = 0;
-  private aiCorrections: Map<string, string> = new Map();
+  private aiCorrections: Map<string, { fixed: string; type: string }> = new Map();
   get hasAiCorrections(): boolean { return this.aiCorrections.size > 0; }
   private ignoredWords: Set<string> = new Set();
   private isAutoCapitalizing = false;
@@ -186,6 +186,7 @@ export class AppreciationEditorModalComponent
   popoverLength = 0;
   popoverSuggestions: string[] = [];
   isAiCorrection = false;
+  isGrammarCorrection = false;
   private popoverHideTimeout: any = null;
 
   score = 0;
@@ -791,7 +792,7 @@ countAllPassed(): number {
     const allErrors: SpellError[] = [...typoErrors];
     const typoPositions = new Set(typoErrors.map(e => e.index));
 
-    this.aiCorrections.forEach((fixed, wrong) => {
+    this.aiCorrections.forEach((correction, wrong) => {
       const regex = new RegExp(`\\b${this.escapeRegex(wrong)}\\b`, 'gi');
       let match;
       while ((match = regex.exec(text)) !== null) {
@@ -816,10 +817,13 @@ countAllPassed(): number {
       const spellEls = this.quillEditor.root.querySelectorAll('.ql-spell-error');
       spellEls.forEach((el: Element) => {
         const w = el.getAttribute('data-word')?.toLowerCase();
-        if (w && this.aiCorrections.has(w)) {
+        const correction = w ? this.aiCorrections.get(w) : undefined;
+        if (correction) {
           el.setAttribute('data-source', 'ai');
+          el.setAttribute('data-type', correction.type);
         } else {
           el.setAttribute('data-source', 'local');
+          el.setAttribute('data-type', 'spelling');
         }
       });
     }, 0);
@@ -830,12 +834,13 @@ countAllPassed(): number {
     if (!word) return;
 
     const lowerWord = word.toLowerCase();
-    this.isAiCorrection = this.aiCorrections.has(lowerWord);
+    const aiCorrection = this.aiCorrections.get(lowerWord);
+    this.isAiCorrection = !!aiCorrection;
+    this.isGrammarCorrection = aiCorrection?.type === 'grammar';
     const suggestions: string[] = [];
 
     // AI suggestion first (if available)
-    const aiFix = this.aiCorrections.get(lowerWord);
-    if (aiFix) suggestions.push(aiFix);
+    if (aiCorrection) suggestions.push(aiCorrection.fixed);
 
     // Then typo-js suggestions (excluding duplicates)
     if (this.spellCheckService.isLoaded() && !this.spellCheckService.check(word)) {
@@ -945,9 +950,9 @@ countAllPassed(): number {
   private applyAllAiCorrections(): void {
     if (this.quillEditor && this.aiCorrections.size > 0) {
       let text = this.quillEditor.getText().replace(/\n$/, '');
-      this.aiCorrections.forEach((fixed, wrong) => {
+      this.aiCorrections.forEach((correction, wrong) => {
         const regex = new RegExp(`\\b${this.escapeRegex(wrong)}\\b`, 'gi');
-        text = text.replace(regex, fixed);
+        text = text.replace(regex, correction.fixed);
       });
       this.quillEditor.setText(text);
       this.aiCorrections.clear();
@@ -1053,9 +1058,9 @@ countAllPassed(): number {
       // Apply AI corrections first
       const currentText = this.quillEditor.getText().replace(/\n$/, '');
       let correctedText = currentText;
-      this.aiCorrections.forEach((fixed, wrong) => {
+      this.aiCorrections.forEach((correction, wrong) => {
         const regex = new RegExp(`\\b${this.escapeRegex(wrong)}\\b`, 'gi');
-        correctedText = correctedText.replace(regex, fixed);
+        correctedText = correctedText.replace(regex, correction.fixed);
       });
       if (correctedText !== currentText) {
         this.quillEditor.setText(correctedText);
