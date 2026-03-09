@@ -247,7 +247,7 @@
 }
 
 .spell-popover-ai .spell-primary-block:hover {
-  background: rgba(217, 119, 6, 0.06);
+  background: rgba(220, 38, 38, 0.06);
 }
 
 .spell-popover-grammar .spell-primary-block:hover {
@@ -267,7 +267,7 @@
 }
 
 .spell-popover-ai .spell-primary-suggestion {
-  color: #d97706;
+  color: #dc2626;
 }
 
 .spell-popover-grammar .spell-primary-suggestion {
