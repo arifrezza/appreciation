@@ -134,17 +134,27 @@ class AutocompleteService @Inject()(
 		else dist.toDouble / maxLen <= 0.6
 	}
 
+	private val markdownFencePattern = """(?s)^```(?:json)?\s*\n?(.*?)\n?\s*```$""".r
+
+	private def stripMarkdownFencing(raw: String): String = {
+		raw.trim match {
+			case markdownFencePattern(content) => content.trim
+			case other => other
+		}
+	}
+
 	private def parseAutocompleteResponse(raw: String): AutocompleteResult = {
 		try {
-			val json = Json.parse(raw)
+			val cleaned = stripMarkdownFencing(raw)
+			val json = Json.parse(cleaned)
 			val completion = (json \ "completion").asOpt[String].getOrElse("").trim
 			val corrections = (json \ "corrections").asOpt[Seq[SpellCorrection]].getOrElse(Seq.empty)
 				.filter(c => c.`type` == "grammar" || isPlausibleTypo(c.wrong, c.fixed))
 			AutocompleteResult(completion, corrections)
 		} catch {
 			case _: Exception =>
-				// Fallback: treat entire response as plain-text completion (backwards compatible)
-				AutocompleteResult(raw.trim, Seq.empty)
+				logger.warn(s"Failed to parse autocomplete response: ${raw.take(200)}")
+				AutocompleteResult("", Seq.empty)
 		}
 	}
 
