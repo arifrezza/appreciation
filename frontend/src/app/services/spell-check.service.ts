@@ -20,9 +20,19 @@ export class SpellCheckService {
     'api', 'apis', 'backend', 'frontend', 'fullstack', 'sre', 'oauth',
     'webpack', 'npm', 'github', 'gitlab', 'bitbucket', 'kubernetes', 'docker',
     'mongodb', 'postgresql', 'redis', 'graphql', 'restful', 'json', 'yaml',
-    'typescript', 'javascript', 'angular', 'webpack', 'nginx', 'linux',
+    'typescript', 'javascript', 'angular', 'nginx', 'linux', 'UAT', 'sql',
     'dropdown', 'checkbox', 'tooltip', 'navbar', 'sidebar', 'signup', 'login',
-    'async', 'sync', 'refactor', 'refactored', 'codebase', 'repo'
+    'async', 'sync', 'refactor', 'refactored', 'codebase', 'repo','ci', 'cd', 'pipeline',
+    'build', 'deploy', 'staging', 'production', 'debug', 'cicd', 'terraform', 'jenkins', 'aws',
+    'azure', 'lamda', 'cors', 'saas', 'autoscaling', 'gcp', 'ec2', 's3', 'lambda', 'cloudwatch', 'kinesis', 'rds', 'vpc',
+    'bigquery', 'dataproc', 'cloudrun', 'bigdata', 'hadoop', 'spark', 'kafka', 'zookeeper', 'pagination', 'caching', 'cache',
+    'queue', 'queues', 'cron', 'webhook', 'webhooks', 'indexing', 'sharding', 'nosql', 'query', 'queries', 'token',
+    'tokens', 'jwt', 'sso', 'saml', 'csrf', 'xss', 'ddos', 'hashing', 'ui', 'ux', 'props', 'rendering', 'lazyload', 'bundling',
+    'sprint', 'backlog', 'scrum', 'epic', 'unittest', 'e2e', 'e2etest', 'mocking', 'testcase', 'testcases', 'testcoverage', 'bugfix', 'bugfixes',
+    'patch', 'rollback', 'hotfix', 'dependency', 'dependencies', 'monorepo', 'monolithic', 'rebase', 'middleware', 'uptime', 'downtime',
+    'dom', 'virtualdom', 'seo', 'datawarehouse', 'datapipeline','onboarding', 'java', 'kotlin', 'python', 'go', 'golang', 'php', 'ruby', 'swift',
+    'C++', 'csharp', 'dotnet', '.net', 'rust', 'scala', 'elixir', 'erlang', 'clojure', 'haskell', 'fsharp', 'dart', 'flutter', 'C#', 'ceo', 'cto',
+    'jenkin','ci-cd','ci/cd','CodePipeline','agentic','impactful','centric'
   ];
 
   constructor(private http: HttpClient) {}
