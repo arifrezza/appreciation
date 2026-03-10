@@ -139,7 +139,27 @@ export class AppreciationEditorModalComponent
               .filter(c => !this.ignoredWords.has(c.wrong.toLowerCase()));
 
             this.aiCorrections.clear();
-            filtered.forEach(c => this.aiCorrections.set(c.wrong.toLowerCase(), { fixed: c.fixed, type: c.type || 'spelling' }));
+            this.wordToAiPhrase.clear();
+            filtered.forEach(c => {
+              const wrongWords = c.wrong.trim().split(/\s+/);
+              const fixedWords = c.fixed.trim().split(/\s+/);
+              const type = c.type || 'spelling';
+
+              if (wrongWords.length > 1 && type === 'spelling' && wrongWords.length === fixedWords.length) {
+                // Decompose multi-word spelling correction into individual word entries
+                wrongWords.forEach((w, i) => {
+                  this.aiCorrections.set(w.toLowerCase(), { fixed: fixedWords[i], type });
+                });
+              } else if (wrongWords.length > 1) {
+                // Grammar or unequal word count: keep multi-word key + build reverse map
+                this.aiCorrections.set(c.wrong.toLowerCase(), { fixed: c.fixed, type });
+                wrongWords.forEach(w => {
+                  this.wordToAiPhrase.set(w.toLowerCase(), c.wrong.toLowerCase());
+                });
+              } else {
+                this.aiCorrections.set(c.wrong.toLowerCase(), { fixed: c.fixed, type });
+              }
+            });
             this.runSpellCheck();
           }
         }
@@ -174,6 +194,7 @@ export class AppreciationEditorModalComponent
   ghostWidth = 0;
   ghostIndent = 0;
   private aiCorrections: Map<string, { fixed: string; type: string }> = new Map();
+  private wordToAiPhrase: Map<string, string> = new Map();
   get hasAiCorrections(): boolean { return this.aiCorrections.size > 0; }
   private ignoredWords: Set<string> = new Set();
   private isAutoCapitalizing = false;
@@ -448,6 +469,7 @@ countAllPassed(): number {
       this.showAiSuggestion = false;
       this.ghostText = '';
       this.aiCorrections.clear();
+      this.wordToAiPhrase.clear();
       this.lastRewriteAtTickCount = -1;
       this.showCongratulation = false;
       this.aiGuidance = 'Your message contains inappropriate language. Please revise it before continuing.';
@@ -687,6 +709,7 @@ countAllPassed(): number {
     this.showAiSuggestion = false;
     this.ghostText = '';
     this.aiCorrections.clear();
+    this.wordToAiPhrase.clear();
     this.abbreviationErrors.clear();
     this.ignoredWords.clear();
     this.spellCheckService.resetIgnored();
@@ -800,22 +823,31 @@ countAllPassed(): number {
     this.abbreviationErrors.clear();
     abbrevErrors.forEach(e => this.abbreviationErrors.set(e.word.toLowerCase(), e.formal));
 
-    // 2. Add AI-only corrections as additional errors (abbreviations take priority over typos)
-    const allErrors: SpellError[] = [
-      ...typoErrors.filter(e => !abbrevPositions.has(e.index)),
-      ...abbrevErrors.map(e => ({ word: e.word, index: e.index, length: e.length }))
-    ];
-    const typoPositions = new Set(typoErrors.map(e => e.index));
-
+    // 2. Find AI correction positions first (AI takes priority over typo-js)
+    const aiRanges: { start: number; length: number; word: string }[] = [];
     this.aiCorrections.forEach((correction, wrong) => {
       const regex = new RegExp(`\\b${this.escapeRegex(wrong)}\\b`, 'gi');
       let match;
       while ((match = regex.exec(text)) !== null) {
-        if (!typoPositions.has(match.index)) {
-          allErrors.push({ word: match[0], index: match.index, length: match[0].length });
-        }
+        aiRanges.push({ start: match.index, length: match[0].length, word: match[0] });
       }
     });
+
+    // Build set of positions covered by AI corrections
+    const aiCoveredPositions = new Set<number>();
+    for (const range of aiRanges) {
+      for (let i = range.start; i < range.start + range.length; i++) {
+        aiCoveredPositions.add(i);
+      }
+    }
+
+    // Filter out typo errors that overlap with AI corrections; abbreviations still take priority over typos
+    const filteredTypoErrors = typoErrors.filter(e => !aiCoveredPositions.has(e.index));
+    const allErrors: SpellError[] = [
+      ...filteredTypoErrors.filter(e => !abbrevPositions.has(e.index)),
+      ...abbrevErrors.map(e => ({ word: e.word, index: e.index, length: e.length })),
+      ...aiRanges.map(r => ({ word: r.word, index: r.start, length: r.length }))
+    ];
 
     // 3. Apply spell-error format
     this.isApplyingSpellFormat = true;
@@ -832,7 +864,11 @@ countAllPassed(): number {
       const spellEls = this.quillEditor.root.querySelectorAll('.ql-spell-error');
       spellEls.forEach((el: Element) => {
         const w = el.getAttribute('data-word')?.toLowerCase();
-        const correction = w ? this.aiCorrections.get(w) : undefined;
+        let correction = w ? this.aiCorrections.get(w) : undefined;
+        if (!correction && w) {
+          const phrase = this.wordToAiPhrase.get(w);
+          if (phrase) correction = this.aiCorrections.get(phrase);
+        }
         const abbrevFormal = w ? this.abbreviationDictionaryService.getFormal(w) : undefined;
         if (correction) {
           el.setAttribute('data-source', 'ai');
@@ -853,7 +889,14 @@ countAllPassed(): number {
     if (!word) return;
 
     const lowerWord = word.toLowerCase();
-    const aiCorrection = this.aiCorrections.get(lowerWord);
+    let aiCorrection = this.aiCorrections.get(lowerWord);
+    // Reverse lookup: check if this word is part of a multi-word AI correction
+    if (!aiCorrection) {
+      const parentPhrase = this.wordToAiPhrase.get(lowerWord);
+      if (parentPhrase) {
+        aiCorrection = this.aiCorrections.get(parentPhrase);
+      }
+    }
     const abbrevFormal = this.abbreviationDictionaryService.getFormal(lowerWord);
     this.isAiCorrection = !!aiCorrection;
     this.isGrammarCorrection = aiCorrection?.type === 'grammar';
@@ -906,22 +949,45 @@ countAllPassed(): number {
   applySuggestion(suggestion: string): void {
     if (!this.quillEditor) return;
 
+    let replaceIndex = this.popoverIndex;
+    let replaceLength = this.popoverLength;
+    let deleteKey = this.popoverWord.toLowerCase();
+
+    // If this word is part of a multi-word AI correction, replace the full phrase
+    const parentPhrase = this.wordToAiPhrase.get(deleteKey);
+    if (parentPhrase) {
+      const text = this.quillEditor.getText().replace(/\n$/, '');
+      const regex = new RegExp(`\\b${this.escapeRegex(parentPhrase)}\\b`, 'gi');
+      const match = regex.exec(text);
+      if (match) {
+        replaceIndex = match.index;
+        replaceLength = match[0].length;
+        deleteKey = parentPhrase;
+      }
+    }
+
     // Preserve formatting at the position
-    const format = this.quillEditor.getFormat(this.popoverIndex, this.popoverLength);
+    const format = this.quillEditor.getFormat(replaceIndex, replaceLength);
     delete (format as any)['spell-error'];
 
-    this.quillEditor.deleteText(this.popoverIndex, this.popoverLength, 'user');
-    this.quillEditor.insertText(this.popoverIndex, suggestion, format, 'user');
+    this.quillEditor.deleteText(replaceIndex, replaceLength, 'user');
+    this.quillEditor.insertText(replaceIndex, suggestion, format, 'user');
 
     // Ensure a space exists after the replaced word
-    const afterIndex = this.popoverIndex + suggestion.length;
+    const afterIndex = replaceIndex + suggestion.length;
     const textAfter = this.quillEditor.getText(afterIndex, 1);
     if (textAfter && textAfter !== ' ' && textAfter !== '\n') {
       this.quillEditor.insertText(afterIndex, ' ', 'user');
     }
 
-    // Remove from AI corrections if it was an AI correction
-    this.aiCorrections.delete(this.popoverWord.toLowerCase());
+    // Remove from AI corrections
+    this.aiCorrections.delete(deleteKey);
+    // Clean up reverse map entries for this phrase
+    if (parentPhrase) {
+      for (const [w, p] of this.wordToAiPhrase) {
+        if (p === parentPhrase) this.wordToAiPhrase.delete(w);
+      }
+    }
 
     this.showSpellPopover = false;
     this.plainText = this.quillEditor.getText().replace(/\n$/, '') || '';
@@ -940,6 +1006,14 @@ countAllPassed(): number {
     this.spellCheckService.ignore(this.popoverWord);
     this.ignoredWords.add(lower);
     this.aiCorrections.delete(lower);
+    // Clean up multi-word AI correction if this word belongs to one
+    const parentPhrase = this.wordToAiPhrase.get(lower);
+    if (parentPhrase) {
+      this.aiCorrections.delete(parentPhrase);
+      for (const [w, p] of this.wordToAiPhrase) {
+        if (p === parentPhrase) this.wordToAiPhrase.delete(w);
+      }
+    }
     this.showSpellPopover = false;
     this.lastCheckedText = '';
     this.runSpellCheck();
@@ -991,6 +1065,7 @@ countAllPassed(): number {
       });
       this.quillEditor.setText(text);
       this.aiCorrections.clear();
+      this.wordToAiPhrase.clear();
       this.plainText = this.quillEditor.getText().replace(/\n$/, '') || '';
       this.userText = this.plainText;
       this.previousRawText = this.userText;
@@ -1101,6 +1176,7 @@ countAllPassed(): number {
         this.quillEditor.setText(correctedText);
       }
       this.aiCorrections.clear();
+      this.wordToAiPhrase.clear();
 
       // Append ghost text at the end, preserving all active formats
       const len = this.quillEditor.getLength() - 1; // -1 for trailing \n
