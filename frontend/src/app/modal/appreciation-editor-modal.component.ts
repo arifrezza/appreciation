@@ -134,8 +134,7 @@ export class AppreciationEditorModalComponent
               setTimeout(() => this.updateGhostPosition());
             }
             const filtered = (res.corrections || [])
-              .filter(c => c.wrong.toLowerCase() !== c.fixed.toLowerCase())
-              .filter(c => c.wrong.toLowerCase().replace(/[^a-z]/g, '') !== c.fixed.toLowerCase().replace(/[^a-z]/g, ''))
+              .filter(c => c.wrong !== c.fixed)
               .filter(c => !this.ignoredWords.has(c.wrong.toLowerCase()));
 
             this.aiCorrections.clear();
