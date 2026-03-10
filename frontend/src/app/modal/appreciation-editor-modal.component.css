@@ -218,7 +218,6 @@
 
 /* Spell check underline — abbreviation/informal language (dashed yellow) */
 :host ::ng-deep .ql-spell-error[data-type="abbreviation"] {
-  text-decoration-style: dashed;
   text-decoration-color: rgba(202, 138, 4, 0.75);
 }
 

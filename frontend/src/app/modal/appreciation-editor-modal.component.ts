@@ -1057,21 +1057,32 @@ countAllPassed(): number {
   }
 
   private applyAllAiCorrections(): void {
-    if (this.quillEditor && this.aiCorrections.size > 0) {
-      let text = this.quillEditor.getText().replace(/\n$/, '');
-      this.aiCorrections.forEach((correction, wrong) => {
-        const regex = new RegExp(`\\b${this.escapeRegex(wrong)}\\b`, 'gi');
-        text = text.replace(regex, correction.fixed);
-      });
-      this.quillEditor.setText(text);
-      this.aiCorrections.clear();
-      this.wordToAiPhrase.clear();
-      this.plainText = this.quillEditor.getText().replace(/\n$/, '') || '';
-      this.userText = this.plainText;
-      this.previousRawText = this.userText;
-      this.lastCheckedText = '';
-      this.onTextChange();
-    }
+    if (!this.quillEditor) return;
+    if (this.aiCorrections.size === 0 && this.abbreviationErrors.size === 0) return;
+
+    let text = this.quillEditor.getText().replace(/\n$/, '');
+
+    // Apply abbreviation/informal language corrections
+    this.abbreviationErrors.forEach((formal, informal) => {
+      const regex = new RegExp(`\\b${this.escapeRegex(informal)}\\b`, 'gi');
+      text = text.replace(regex, formal);
+    });
+
+    // Apply AI corrections
+    this.aiCorrections.forEach((correction, wrong) => {
+      const regex = new RegExp(`\\b${this.escapeRegex(wrong)}\\b`, 'gi');
+      text = text.replace(regex, correction.fixed);
+    });
+
+    this.quillEditor.setText(text);
+    this.aiCorrections.clear();
+    this.wordToAiPhrase.clear();
+    this.abbreviationErrors.clear();
+    this.plainText = this.quillEditor.getText().replace(/\n$/, '') || '';
+    this.userText = this.plainText;
+    this.previousRawText = this.userText;
+    this.lastCheckedText = '';
+    this.onTextChange();
   }
 
   private normalizeCompletion(completion: string, userText: string): string {
@@ -1148,7 +1159,7 @@ countAllPassed(): number {
   }
 
   onKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Tab' && !this.ghostText && this.aiCorrections.size > 0) {
+    if (event.key === 'Tab' && !this.ghostText && (this.aiCorrections.size > 0 || this.abbreviationErrors.size > 0)) {
       event.preventDefault();
       this.applyAllAiCorrections();
       return;
@@ -1165,9 +1176,13 @@ countAllPassed(): number {
       // Capture active formats before any text manipulation (setText clears them)
       const activeFormats = this.quillEditor.getFormat();
 
-      // Apply AI corrections first
+      // Apply abbreviation and AI corrections first
       const currentText = this.quillEditor.getText().replace(/\n$/, '');
       let correctedText = currentText;
+      this.abbreviationErrors.forEach((formal, informal) => {
+        const regex = new RegExp(`\\b${this.escapeRegex(informal)}\\b`, 'gi');
+        correctedText = correctedText.replace(regex, formal);
+      });
       this.aiCorrections.forEach((correction, wrong) => {
         const regex = new RegExp(`\\b${this.escapeRegex(wrong)}\\b`, 'gi');
         correctedText = correctedText.replace(regex, correction.fixed);
@@ -1177,6 +1192,7 @@ countAllPassed(): number {
       }
       this.aiCorrections.clear();
       this.wordToAiPhrase.clear();
+      this.abbreviationErrors.clear();
 
       // Append ghost text at the end, preserving all active formats
       const len = this.quillEditor.getLength() - 1; // -1 for trailing \n
