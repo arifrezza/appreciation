@@ -72,7 +72,7 @@
             </div>
 
             <!-- Tab hint: shown when AI corrections exist -->
-            <div class="spell-tab-hint" *ngIf="hasAiCorrections">
+            <div class="spell-tab-hint" *ngIf="hasAiCorrections" (click)="onFixAllClick()">
               Press <kbd>Tab</kbd> to fix all
             </div>
           </div>

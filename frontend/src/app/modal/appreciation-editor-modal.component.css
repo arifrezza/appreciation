@@ -377,6 +377,14 @@
   border-radius: 0;
   width: auto;
   box-sizing: border-box;
+  cursor: pointer;
+  transition: transform 0.1s ease, background 0.1s ease;
+  user-select: none;
+}
+
+.spell-tab-hint:active {
+  transform: scale(0.97);
+  background: #0f0f11;
 }
 
 .spell-tab-hint kbd {

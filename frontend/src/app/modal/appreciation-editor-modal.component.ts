@@ -1056,6 +1056,10 @@ countAllPassed(): number {
     this.showSpellPopover = false;
   }
 
+  onFixAllClick(): void {
+    this.applyAllAiCorrections();
+  }
+
   private applyAllAiCorrections(): void {
     if (!this.quillEditor) return;
     if (this.aiCorrections.size === 0 && this.abbreviationErrors.size === 0) return;
