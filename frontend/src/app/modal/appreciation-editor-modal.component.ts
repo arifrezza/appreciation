@@ -209,6 +209,7 @@ export class AppreciationEditorModalComponent
   popoverSuggestions: string[] = [];
   isAiCorrection = false;
   isGrammarCorrection = false;
+  isToneCorrection = false;
   isAbbreviationCorrection = false;
   private abbreviationErrors: Map<string, string> = new Map();
   private popoverHideTimeout: any = null;
@@ -899,6 +900,7 @@ countAllPassed(): number {
     const abbrevFormal = this.abbreviationDictionaryService.getFormal(lowerWord);
     this.isAiCorrection = !!aiCorrection;
     this.isGrammarCorrection = aiCorrection?.type === 'grammar';
+    this.isToneCorrection = aiCorrection?.type === 'tone';
     this.isAbbreviationCorrection = !!abbrevFormal;
     const suggestions: string[] = [];
 
