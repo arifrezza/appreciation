@@ -12,7 +12,6 @@ export class AbbreviationDictionaryService {
 
   private readonly dictionary = new Map<string, string>([
     ['u', 'you'],
-    ['uat', 'uat'],
     ['usr', 'user'],
     ['bcoz', 'because'],
     ['ur', 'your'],
