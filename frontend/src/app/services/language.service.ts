@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 export interface SpellCorrection {
   wrong: string;
   fixed: string;
-  type?: 'spelling' | 'grammar';
+  type?: 'spelling' | 'grammar' | 'tone';
 }
 
 export interface CriterionResult {

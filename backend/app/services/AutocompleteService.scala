@@ -37,7 +37,7 @@ class AutocompleteService @Inject()(
 			  |1. "completion": the remaining words to naturally finish the current sentence. Do NOT repeat any text the user has already written. Keep it concise — one sentence fragment, no more than 20 words.
 			  |   Use proper sentence punctuation. If the completion starts a new clause, prefer a period (.) over semicolons (;) or colons (:). Capitalize the first letter after any sentence-ending punctuation (. ! ?).
 			  |   If the user's text does not end with sentence-ending punctuation (. ! ?), begin the completion in lowercase since it continues the existing sentence.
-			  |2. "corrections": an array of objects with "wrong" (the incorrect word or phrase as it appears), "fixed" (the corrected version), and "type" ("spelling" or "grammar") for any spelling or grammar errors in the user's text.
+			  |2. "corrections": an array of objects with "wrong" (the incorrect word or phrase as it appears), "fixed" (the corrected version), and "type" ("spelling", "grammar", or "tone") for any spelling, grammar, or tone errors in the user's text.
 			  |
 			  |CRITICAL — Grammar & Spelling Check Instructions (do this FIRST, before writing the completion):
 			  |Before generating the completion, carefully re-read the user's text word by word and check for ALL of the following:
@@ -47,6 +47,7 @@ class AutocompleteService @Inject()(
 			  |  d) Wrong tense usage (e.g., "I seen" should be "I have seen", "she come yesterday" should be "she came yesterday") → type: "grammar"
 			  |  e) Missing or wrong articles (e.g., "he is good person" should be "he is a good person") → type: "grammar"
 			  |  f) Missing prepositions (e.g., "good working the project" should be "good working on the project", "help login module" should be "help with the login module") → type: "grammar"
+			  |  g) Negative, harsh, or inappropriate tone for an appreciation message (e.g., "you finally managed to do something right", "despite your usual mistakes") → type: "tone". Suggest a rephrased version that conveys the same meaning in a positive, encouraging way.
 			  |
 			  |For grammar errors, "wrong" must be the minimal incorrect phrase from the user's text and "fixed" must be the corrected phrase.
 			  |Examples:
@@ -56,6 +57,7 @@ class AutocompleteService @Inject()(
 			  |  - "she definately helped" → {"wrong": "definately", "fixed": "definitely", "type": "spelling"}
 			  |  - "help login module" → {"wrong": "help login module", "fixed": "help with the login module", "type": "grammar"}
 			  |  - "Thank u" → {"wrong": "u", "fixed": "you", "type": "spelling"}
+			  |  - "you finally managed to finish" → {"wrong": "you finally managed to finish", "fixed": "you successfully completed", "type": "tone"}
 			  |
 			  |You MUST report every error found. Do NOT skip grammar errors just because you understand the intended meaning.
 			  |
@@ -149,7 +151,7 @@ class AutocompleteService @Inject()(
 			val json = Json.parse(cleaned)
 			val completion = (json \ "completion").asOpt[String].getOrElse("").trim
 			val corrections = (json \ "corrections").asOpt[Seq[SpellCorrection]].getOrElse(Seq.empty)
-				.filter(c => c.`type` == "grammar" || isPlausibleTypo(c.wrong, c.fixed))
+				.filter(c => c.`type` == "grammar" || c.`type` == "tone" || isPlausibleTypo(c.wrong, c.fixed))
 			AutocompleteResult(completion, corrections)
 		} catch {
 			case _: Exception =>
