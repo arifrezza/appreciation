@@ -196,6 +196,7 @@ export class AppreciationEditorModalComponent
   private wordToAiPhrase: Map<string, string> = new Map();
   get hasAiCorrections(): boolean { return this.aiCorrections.size > 0; }
   private ignoredWords: Set<string> = new Set();
+  private suppressAutocomplete = false;
   private isAutoCapitalizing = false;
   private spellCheckTimeout: any = null;
   private lastCheckedText = '';
@@ -433,6 +434,11 @@ countAllPassed(): number {
     this.typingSubject.next(text);
 
     // ⭐ push to autocomplete stream (if there are failing criteria OR in congratulation for typo checks)
+    // Skip autocomplete right after applying a suggestion to prevent tone correction loops
+    if (this.suppressAutocomplete) {
+      this.suppressAutocomplete = false;
+      return;
+    }
     const failingCount = this.guideItems.filter(
       i => i.label !== 'Abusive Check' && i.status !== 'success'
     ).length;
@@ -995,6 +1001,7 @@ countAllPassed(): number {
     this.userText = this.plainText;
     this.previousRawText = this.userText;
     this.lastCheckedText = '';
+    this.suppressAutocomplete = true;
     this.onTextChange();
   }
 
