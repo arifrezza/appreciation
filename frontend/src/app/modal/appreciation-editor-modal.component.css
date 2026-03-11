@@ -277,10 +277,6 @@
   background: #4f46e5;
 }
 
-.spell-popover-grammar .spell-primary-block:hover {
-  background: #4f46e5;
-}
-
 .spell-primary-label {
   font-size: 13px;
   color: #6b7280;
@@ -295,18 +291,6 @@
 
 .spell-popover-ai .spell-primary-suggestion {
   color: #2563eb;
-}
-
-.spell-popover-grammar .spell-primary-suggestion {
-  color: #2563eb;
-}
-
-.spell-popover-tone .spell-primary-block:hover {
-  background: #dc2626;
-}
-
-.spell-popover-tone .spell-primary-suggestion {
-  color: #dc2626;
 }
 
 .spell-popover-abbreviation .spell-primary-block:hover {

@@ -36,8 +36,6 @@
           <!-- Spell check popover -->
           <div class="spell-popover" *ngIf="showSpellPopover"
                [class.spell-popover-ai]="isAiCorrection"
-               [class.spell-popover-grammar]="isGrammarCorrection"
-               [class.spell-popover-tone]="isToneCorrection"
                [class.spell-popover-abbreviation]="isAbbreviationCorrection"
                [style.top.px]="popoverTop" [style.left.px]="popoverLeft"
                (mouseenter)="onPopoverMouseEnter()"
@@ -47,7 +45,7 @@
             <div class="spell-primary-block"
                  (click)="popoverSuggestions.length > 0 && applySuggestion(popoverSuggestions[0])">
               <div class="spell-primary-label">
-                {{ isAbbreviationCorrection ? 'Informal language' : (isToneCorrection ? 'Tone Correction' : (isGrammarCorrection ? 'Grammar Correction' : 'Correct your spelling')) }}
+                {{ isAbbreviationCorrection ? 'Informal language' : 'Correct your spelling' }}
               </div>
               <div class="spell-primary-suggestion" *ngIf="popoverSuggestions.length > 0">
                 {{ popoverSuggestions[0] }}

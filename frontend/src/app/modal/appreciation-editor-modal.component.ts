@@ -136,33 +136,21 @@ export class AppreciationEditorModalComponent
             const filtered = (res.corrections || [])
               .filter(c => c.wrong !== c.fixed)
               .filter(c => !this.ignoredWords.has(c.wrong.toLowerCase()))
-              .filter(c => {
-                const type = c.type || 'spelling';
-                if (type === 'spelling') return true;
-                const count = this.correctionCounts.get(c.wrong.toLowerCase()) || 0;
-                return count < this.MAX_GRAMMAR_TONE_CORRECTIONS;
-              });
+              .filter(c => (c.type || 'spelling') === 'spelling');
 
             this.aiCorrections.clear();
             this.wordToAiPhrase.clear();
             filtered.forEach(c => {
               const wrongWords = c.wrong.trim().split(/\s+/);
               const fixedWords = c.fixed.trim().split(/\s+/);
-              const type = c.type || 'spelling';
 
-              if (wrongWords.length > 1 && type === 'spelling' && wrongWords.length === fixedWords.length) {
+              if (wrongWords.length > 1 && wrongWords.length === fixedWords.length) {
                 // Decompose multi-word spelling correction into individual word entries
                 wrongWords.forEach((w, i) => {
-                  this.aiCorrections.set(w.toLowerCase(), { fixed: fixedWords[i], type });
-                });
-              } else if (wrongWords.length > 1) {
-                // Grammar or unequal word count: keep multi-word key + build reverse map
-                this.aiCorrections.set(c.wrong.toLowerCase(), { fixed: c.fixed, type });
-                wrongWords.forEach(w => {
-                  this.wordToAiPhrase.set(w.toLowerCase(), c.wrong.toLowerCase());
+                  this.aiCorrections.set(w.toLowerCase(), { fixed: fixedWords[i], type: 'spelling' });
                 });
               } else {
-                this.aiCorrections.set(c.wrong.toLowerCase(), { fixed: c.fixed, type });
+                this.aiCorrections.set(c.wrong.toLowerCase(), { fixed: c.fixed, type: 'spelling' });
               }
             });
             this.runSpellCheck();
@@ -202,8 +190,6 @@ export class AppreciationEditorModalComponent
   private wordToAiPhrase: Map<string, string> = new Map();
   get hasAiCorrections(): boolean { return this.aiCorrections.size > 0; }
   private ignoredWords: Set<string> = new Set();
-  private correctionCounts: Map<string, number> = new Map();
-  private readonly MAX_GRAMMAR_TONE_CORRECTIONS = 2;
   private isAutoCapitalizing = false;
   private spellCheckTimeout: any = null;
   private lastCheckedText = '';
@@ -216,8 +202,6 @@ export class AppreciationEditorModalComponent
   popoverLength = 0;
   popoverSuggestions: string[] = [];
   isAiCorrection = false;
-  isGrammarCorrection = false;
-  isToneCorrection = false;
   isAbbreviationCorrection = false;
   private abbreviationErrors: Map<string, string> = new Map();
   private popoverHideTimeout: any = null;
@@ -366,19 +350,6 @@ countAllPassed(): number {
 
     this.plainText = this.quillEditor.getText().replace(/\n$/, '');
     this.userText = this.plainText;
-
-    // Reset correction counter for the word the user is currently editing
-    const sel = this.quillEditor.getSelection();
-    if (sel && this.correctionCounts.size > 0) {
-      const cursorText = this.quillEditor.getText().replace(/\n$/, '');
-      const pos = sel.index;
-      let start = pos;
-      let end = pos;
-      while (start > 0 && /\S/.test(cursorText[start - 1])) start--;
-      while (end < cursorText.length && /\S/.test(cursorText[end])) end++;
-      const word = cursorText.substring(start, end).toLowerCase();
-      if (word) this.correctionCounts.delete(word);
-    }
 
     this.onTextChange();
     this.scheduleSpellCheck();
@@ -734,7 +705,6 @@ countAllPassed(): number {
     this.wordToAiPhrase.clear();
     this.abbreviationErrors.clear();
     this.ignoredWords.clear();
-    this.correctionCounts.clear();
     this.spellCheckService.resetIgnored();
     this.abbreviationDictionaryService.resetIgnored();
     this.showSpellPopover = false;
@@ -922,8 +892,6 @@ countAllPassed(): number {
     }
     const abbrevFormal = this.abbreviationDictionaryService.getFormal(lowerWord);
     this.isAiCorrection = !!aiCorrection;
-    this.isGrammarCorrection = aiCorrection?.type === 'grammar';
-    this.isToneCorrection = aiCorrection?.type === 'tone';
     this.isAbbreviationCorrection = !!abbrevFormal;
     const suggestions: string[] = [];
 
@@ -1004,10 +972,6 @@ countAllPassed(): number {
       this.quillEditor.insertText(afterIndex, ' ', 'user');
     }
 
-    // Track correction count for grammar/tone before deleting the entry
-    const correctionMeta = this.aiCorrections.get(deleteKey);
-    const correctionType = correctionMeta?.type || 'spelling';
-
     // Remove from AI corrections
     this.aiCorrections.delete(deleteKey);
     // Clean up reverse map entries for this phrase
@@ -1015,12 +979,6 @@ countAllPassed(): number {
       for (const [w, p] of this.wordToAiPhrase) {
         if (p === parentPhrase) this.wordToAiPhrase.delete(w);
       }
-    }
-
-    // Increment correction counter for grammar/tone (not spelling)
-    if (correctionType !== 'spelling') {
-      const prev = this.correctionCounts.get(deleteKey) || 0;
-      this.correctionCounts.set(deleteKey, prev + 1);
     }
 
     this.showSpellPopover = false;
