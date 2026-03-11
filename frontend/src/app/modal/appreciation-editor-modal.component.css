@@ -216,15 +216,15 @@
   background: rgba(234, 88, 12, 0.08);
 }
 
-/* Spell check underline — AI tone corrections (blue) */
+/* Spell check underline — AI tone corrections (red) */
 :host ::ng-deep .ql-spell-error[data-type="tone"] {
   text-decoration-style: solid;
-  text-decoration-color: rgba(37, 99, 235, 0.75);
+  text-decoration-color: rgba(220, 38, 38, 0.75);
 }
 
 :host ::ng-deep .ql-spell-error[data-type="tone"]:hover {
-  text-decoration-color: #2563eb;
-  background: rgba(37, 99, 235, 0.08);
+  text-decoration-color: #dc2626;
+  background: rgba(220, 38, 38, 0.08);
 }
 
 /* Spell check underline — abbreviation/informal language (dashed yellow) */
@@ -302,11 +302,11 @@
 }
 
 .spell-popover-tone .spell-primary-block:hover {
-  background: #2563eb;
+  background: #dc2626;
 }
 
 .spell-popover-tone .spell-primary-suggestion {
-  color: #2563eb;
+  color: #dc2626;
 }
 
 .spell-popover-abbreviation .spell-primary-block:hover {

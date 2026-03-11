@@ -135,7 +135,13 @@ export class AppreciationEditorModalComponent
             }
             const filtered = (res.corrections || [])
               .filter(c => c.wrong !== c.fixed)
-              .filter(c => !this.ignoredWords.has(c.wrong.toLowerCase()));
+              .filter(c => !this.ignoredWords.has(c.wrong.toLowerCase()))
+              .filter(c => {
+                const type = c.type || 'spelling';
+                if (type === 'spelling') return true;
+                const count = this.correctionCounts.get(c.wrong.toLowerCase()) || 0;
+                return count < this.MAX_GRAMMAR_TONE_CORRECTIONS;
+              });
 
             this.aiCorrections.clear();
             this.wordToAiPhrase.clear();
@@ -196,7 +202,8 @@ export class AppreciationEditorModalComponent
   private wordToAiPhrase: Map<string, string> = new Map();
   get hasAiCorrections(): boolean { return this.aiCorrections.size > 0; }
   private ignoredWords: Set<string> = new Set();
-  private suppressAutocomplete = false;
+  private correctionCounts: Map<string, number> = new Map();
+  private readonly MAX_GRAMMAR_TONE_CORRECTIONS = 2;
   private isAutoCapitalizing = false;
   private spellCheckTimeout: any = null;
   private lastCheckedText = '';
@@ -359,6 +366,20 @@ countAllPassed(): number {
 
     this.plainText = this.quillEditor.getText().replace(/\n$/, '');
     this.userText = this.plainText;
+
+    // Reset correction counter for the word the user is currently editing
+    const sel = this.quillEditor.getSelection();
+    if (sel && this.correctionCounts.size > 0) {
+      const cursorText = this.quillEditor.getText().replace(/\n$/, '');
+      const pos = sel.index;
+      let start = pos;
+      let end = pos;
+      while (start > 0 && /\S/.test(cursorText[start - 1])) start--;
+      while (end < cursorText.length && /\S/.test(cursorText[end])) end++;
+      const word = cursorText.substring(start, end).toLowerCase();
+      if (word) this.correctionCounts.delete(word);
+    }
+
     this.onTextChange();
     this.scheduleSpellCheck();
   }
@@ -434,11 +455,6 @@ countAllPassed(): number {
     this.typingSubject.next(text);
 
     // ⭐ push to autocomplete stream (if there are failing criteria OR in congratulation for typo checks)
-    // Skip autocomplete right after applying a suggestion to prevent tone correction loops
-    if (this.suppressAutocomplete) {
-      this.suppressAutocomplete = false;
-      return;
-    }
     const failingCount = this.guideItems.filter(
       i => i.label !== 'Abusive Check' && i.status !== 'success'
     ).length;
@@ -718,6 +734,7 @@ countAllPassed(): number {
     this.wordToAiPhrase.clear();
     this.abbreviationErrors.clear();
     this.ignoredWords.clear();
+    this.correctionCounts.clear();
     this.spellCheckService.resetIgnored();
     this.abbreviationDictionaryService.resetIgnored();
     this.showSpellPopover = false;
@@ -987,6 +1004,10 @@ countAllPassed(): number {
       this.quillEditor.insertText(afterIndex, ' ', 'user');
     }
 
+    // Track correction count for grammar/tone before deleting the entry
+    const correctionMeta = this.aiCorrections.get(deleteKey);
+    const correctionType = correctionMeta?.type || 'spelling';
+
     // Remove from AI corrections
     this.aiCorrections.delete(deleteKey);
     // Clean up reverse map entries for this phrase
@@ -996,12 +1017,17 @@ countAllPassed(): number {
       }
     }
 
+    // Increment correction counter for grammar/tone (not spelling)
+    if (correctionType !== 'spelling') {
+      const prev = this.correctionCounts.get(deleteKey) || 0;
+      this.correctionCounts.set(deleteKey, prev + 1);
+    }
+
     this.showSpellPopover = false;
     this.plainText = this.quillEditor.getText().replace(/\n$/, '') || '';
     this.userText = this.plainText;
     this.previousRawText = this.userText;
     this.lastCheckedText = '';
-    this.suppressAutocomplete = true;
     this.onTextChange();
   }
 
