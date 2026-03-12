@@ -20,12 +20,16 @@ import subprocess
 import logging
 import asyncio
 import shlex
+import time
+from datetime import datetime, timezone
 from pathlib import Path
 from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 
 load_dotenv()
+
+BOT_START_TIME = datetime.now(timezone.utc)
 
 # ── Config ────────────────────────────────────────────────────────────────────
 TELEGRAM_TOKEN   = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -443,6 +447,10 @@ async def cmd_commands(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
         "*🔍 Status & Inspection*\n\n"
 
+        "`/online`\n"
+        "Checks if the bot and backend services are reachable. "
+        "Reports bot uptime, Play backend status (port 9000), and MySQL connectivity.\n\n"
+
         "`/gitstatus`\n"
         "Quick mobile-friendly snapshot: current branch, conflict list, "
         "short file status, and last 3 commits. Use this any time to get your bearings.\n\n"
@@ -668,6 +676,55 @@ async def cmd_gitstatus(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
 
 @auth_required
+async def cmd_online(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """
+    /online
+    Checks if the bot and backend services are reachable.
+    Reports bot uptime, Play backend status (port 9000), and DB connectivity.
+    """
+    now = datetime.now(timezone.utc)
+    uptime = now - BOT_START_TIME
+    hours, remainder = divmod(int(uptime.total_seconds()), 3600)
+    minutes, seconds = divmod(remainder, 60)
+    uptime_str = f"{hours}h {minutes}m {seconds}s"
+
+    loop = asyncio.get_event_loop()
+
+    # Check Play backend on port 9000
+    backend_out = await loop.run_in_executor(
+        None,
+        lambda: run_command("curl -s -o /dev/null -w '%{http_code}' --max-time 3 http://localhost:9000/api/users/0")
+    )
+    backend_code = backend_out.strip().strip("'")
+    if backend_code in ("200", "400", "401", "403", "404"):
+        backend_status = f"✅ Online (HTTP {backend_code})"
+    elif backend_code == "(no output)" or not backend_code:
+        backend_status = "❌ Unreachable (no response)"
+    else:
+        backend_status = f"⚠️ Responded with HTTP {backend_code}"
+
+    # Check MySQL on port 3306
+    db_out = await loop.run_in_executor(
+        None,
+        lambda: run_command("nc -z -w 2 localhost 3306 && echo ok || echo fail")
+    )
+    db_status = "✅ Online" if "ok" in db_out else "❌ Unreachable"
+
+    msg = (
+        "🟢 *Bot Status: ONLINE*\n"
+        f"⏱ *Uptime:* `{uptime_str}`\n"
+        f"🕐 *Started:* `{BOT_START_TIME.strftime('%Y-%m-%d %H:%M:%S')} UTC`\n\n"
+        "━━━━━━━━━━━━━━━━━━━━━\n"
+        "*🖥 Services*\n\n"
+        f"🎮 *Play backend (9000):* {backend_status}\n"
+        f"🗄 *MySQL (3306):* {db_status}\n\n"
+        f"📁 *Work dir:* `{WORK_DIR}`\n"
+        f"🤖 *Claude mode:* {'on' if USE_CLAUDE else 'off'}"
+    )
+    await update.message.reply_text(msg, parse_mode="Markdown")
+
+
+@auth_required
 async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "👋 *Claude Bridge active.*\n\n"
@@ -691,6 +748,7 @@ async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     allowed_list = ", ".join(f"`{p}`" for p in sorted(ALLOWED_PREFIXES))
     await update.message.reply_text(
         "*📋 Slash Commands:*\n"
+        "`/online` — check bot & service status\n"
         "`/gitstatus` — branch, conflicts, last 3 commits\n"
         "`/merge <branch>` — merge branch + conflict check\n"
         "`/conflicts` — Claude analyzes all conflicts\n"
@@ -763,6 +821,7 @@ def main():
 
     app.add_handler(CommandHandler("start",      cmd_start))
     app.add_handler(CommandHandler("help",       cmd_help))
+    app.add_handler(CommandHandler("online",     cmd_online))
     app.add_handler(CommandHandler("setdir",     cmd_setdir))
     app.add_handler(CommandHandler("gitstatus",  cmd_gitstatus))
     app.add_handler(CommandHandler("conflicts",  cmd_conflicts))
