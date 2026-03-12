@@ -20,7 +20,7 @@ export class SpellCheckService {
     'api', 'apis', 'backend', 'frontend', 'fullstack', 'sre', 'oauth',
     'webpack', 'npm', 'github', 'gitlab', 'bitbucket', 'kubernetes', 'docker',
     'mongodb', 'postgresql', 'redis', 'graphql', 'restful', 'json', 'yaml',
-    'typescript', 'javascript', 'angular', 'nginx', 'linux', 'UAT', 'sql',
+    'typescript', 'javascript', 'angular', 'nginx', 'linux', 'uat', 'sql',
     'dropdown', 'checkbox', 'tooltip', 'navbar', 'sidebar', 'signup', 'login',
     'async', 'sync', 'refactor', 'refactored', 'codebase', 'repo','ci', 'cd', 'pipeline',
     'build', 'deploy', 'staging', 'production', 'debug', 'cicd', 'terraform', 'jenkins', 'aws',
@@ -31,8 +31,9 @@ export class SpellCheckService {
     'sprint', 'backlog', 'scrum', 'epic', 'unittest', 'e2e', 'e2etest', 'mocking', 'testcase', 'testcases', 'testcoverage', 'bugfix', 'bugfixes',
     'patch', 'rollback', 'hotfix', 'dependency', 'dependencies', 'monorepo', 'monolithic', 'rebase', 'middleware', 'uptime', 'downtime',
     'dom', 'virtualdom', 'seo', 'datawarehouse', 'datapipeline','onboarding', 'java', 'kotlin', 'python', 'go', 'golang', 'php', 'ruby', 'swift',
-    'C++', 'csharp', 'dotnet', '.net', 'rust', 'scala', 'elixir', 'erlang', 'clojure', 'haskell', 'fsharp', 'dart', 'flutter', 'C#', 'ceo', 'cto',
-    'jenkin','ci-cd','ci/cd','CodePipeline','agentic','impactful','centric'
+    'C++', 'csharp', 'dotnet', '.net', 'rust', 'scala', 'elixir', 'erlang', 'clojure', 'haskell', 'fsharp', 'dart', 'flutter', 'c#', 'ceo', 'cto',
+    'jenkin','ci-cd','ci/cd','codepipeline','agentic','impactful','centric',
+    'scalable'
   ];
 
   constructor(private http: HttpClient) {}
