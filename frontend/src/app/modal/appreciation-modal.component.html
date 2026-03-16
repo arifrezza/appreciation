@@ -18,7 +18,7 @@
         <div 
           *ngFor="let employee of employees"
           class="employee-item"
-          [class.selected]="selectedEmployeeId === employee.id"
+          [class.selected]="selectedEmployeeIds.has(employee.id)"
           [class.already-appreciated]="employee.alreadyAppreciated"
           (click)="!employee.alreadyAppreciated && selectEmployee(employee.id)"
         >
@@ -34,26 +34,28 @@
               Already Appreciated
             </span>
           </div>
-          <button 
+          <button
             class="add-btn"
+            [class.selected-btn]="selectedEmployeeIds.has(employee.id)"
             [disabled]="employee.alreadyAppreciated"
             (click)="selectEmployee(employee.id); $event.stopPropagation()"
           >
-            <span *ngIf="selectedEmployeeId === employee.id">✓</span>
-            <span *ngIf="selectedEmployeeId !== employee.id">+</span>
+            <span *ngIf="selectedEmployeeIds.has(employee.id)">✓</span>
+            <span *ngIf="!selectedEmployeeIds.has(employee.id)">+</span>
           </button>
         </div>
       </div>
     </div>
     
     <div class="modal-footer">
+      <span class="selection-counter" *ngIf="selectedCount > 0">{{ selectedCount }} selected</span>
       <button class="cancel-btn" (click)="closeModal()">
         Cancel
       </button>
-      <button 
-        class="next-btn" 
+      <button
+        class="next-btn"
         (click)="proceed()"
-        [disabled]="!selectedEmployeeId"
+        [disabled]="selectedEmployeeIds.size === 0"
       >
         Next
       </button>

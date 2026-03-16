@@ -14,7 +14,9 @@ export class LoginComponent {
   showModal = false;           // "Who to appreciate" modal
   showEditorModal = false;     // "Write appreciation" modal
 
-  selectedEmployeeName = '';   // Passed to editor modal
+  selectedEmployees: { id: number; name: string }[] = [];
+
+  get selectedEmployeeNames(): string { return this.selectedEmployees.map(e => e.name).join(', '); }
   errorMessage = '';
   isLoading = false;
 
@@ -64,8 +66,8 @@ export class LoginComponent {
   /**
    * Called when user selects an employee and clicks "Next"
    */
-  onProceedWithEmployee(employee: { id: number; name: string }): void {
-    this.selectedEmployeeName = employee.name;
+  onProceedWithEmployee(event: { employees: { id: number; name: string }[] }): void {
+    this.selectedEmployees = event.employees;
 
     // Hide employee selection modal
     this.showModal = false;

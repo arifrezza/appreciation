@@ -75,9 +75,8 @@
               Press <kbd>Tab</kbd> to fix all
             </div>
           </div>
-        </div>
 
-        <div class="char-count-row">
+          <!-- Mic button inside textarea wrapper -->
           <button class="mic-btn" [class.recording]="isRecording" [class.transcribing]="isTranscribing"
                   (click)="toggleRecording()"
                   [disabled]="isTranscribing"
@@ -93,6 +92,9 @@
             <img *ngIf="isRecording" src="/assets/mic_animated.gif" class="mic-icon mic-icon-animated" alt="Recording..." />
             <span *ngIf="isTranscribing" class="transcribing-spinner"></span>
           </button>
+        </div>
+
+        <div class="char-count-row">
           <span class="char-count">{{ userText.length }}</span>
         </div>
 
@@ -100,10 +102,13 @@
           <button class="rewrite-btn" [disabled]="userText.trim().length < 50 || guideItems[0].status === 'error'" (click)="rewriteWithAI(true)">
             ✨ Enhance with AI
           </button>
+          <div class="enhance-disabled-tooltip" *ngIf="userText.trim().length < 50">
+            Write at least 50 characters to enable<br><strong>Enhance with AI</strong>
+          </div>
           <div class="negative-tooltip-container" *ngIf="showNegativeTooltip">
             <div class="tooltip-arrow"></div>
             <div class="negative-tooltip">
-              🤔 Enhance with AI will remove negative or sarcastic sentiments
+              🤔 <strong>Enhance with AI</strong> will remove negative or sarcastic sentiments
             </div>
           </div>
         </div>

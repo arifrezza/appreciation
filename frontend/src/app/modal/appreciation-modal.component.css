@@ -21,8 +21,8 @@
 .modal-content {
   background: white;
   /* MODIFY: Match the "almost full-screen with margins" size from your screenshot */
-  width: min(92vw, 1100px);
-  height: min(85vh, 760px);
+  width: min(96vw, 1260px);
+  height: min(92vh, 880px);
   border-radius: 12px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   display: flex;
@@ -69,13 +69,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
-  transition: background-color 0.2s;
+  border-radius: 50%;
+  transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
 }
 
 .close-btn:hover {
-  background-color: #f3f4f6;
-  color: #4b5563;
+  background-color: #fee2e2;
+  color: #ef4444;
+  transform: scale(1.1) rotate(90deg);
 }
 
 .modal-body {
@@ -243,4 +244,16 @@
 .next-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.selection-counter {
+  margin-right: auto;
+  font-size: 14px;
+  font-weight: 500;
+  color: #667eea;
+}
+
+.add-btn.selected-btn {
+  background: #667eea;
+  color: white;
 }

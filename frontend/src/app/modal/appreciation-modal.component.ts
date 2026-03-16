@@ -22,12 +22,14 @@ interface Employee {
 export class AppreciationModalComponent implements OnChanges {
 
   @Output() close = new EventEmitter<void>();
-  @Output() proceedWithEmployee = new EventEmitter<{ id: number; name: string }>();
+  @Output() proceedWithEmployee = new EventEmitter<{ employees: { id: number; name: string }[] }>();
 
   @Input() currentUserId!: number;
 
   employees: Employee[] = [];
-  selectedEmployeeId: number | null = null;
+  selectedEmployeeIds: Set<number> = new Set();
+
+  get selectedCount(): number { return this.selectedEmployeeIds.size; }
 
   constructor(private userService: UserService) {}
 
@@ -62,20 +64,19 @@ export class AppreciationModalComponent implements OnChanges {
   }
 
   selectEmployee(employeeId: number): void {
-    this.selectedEmployeeId = employeeId;
+    if (this.selectedEmployeeIds.has(employeeId)) {
+      this.selectedEmployeeIds.delete(employeeId);
+    } else {
+      this.selectedEmployeeIds.add(employeeId);
+    }
+    this.selectedEmployeeIds = new Set(this.selectedEmployeeIds);
   }
 
   proceed(): void {
-    if (!this.selectedEmployeeId) return;
+    if (this.selectedEmployeeIds.size === 0) return;
 
-    const employee = this.employees.find(e => e.id === this.selectedEmployeeId);
-
-    if (employee) {
-      this.proceedWithEmployee.emit({
-        id: employee.id,
-        name: employee.name
-      });
-    }
+    const selected = this.employees.filter(e => this.selectedEmployeeIds.has(e.id));
+    this.proceedWithEmployee.emit({ employees: selected.map(e => ({ id: e.id, name: e.name })) });
 
     this.closeModal();
   }

@@ -60,7 +60,7 @@
 <!-- Appreciation Editor Modal: write appreciation text for the selected person -->
 <app-appreciation-editor-modal
   *ngIf="showEditorModal"
-  [employeeName]="selectedEmployeeName"
+  [employeeName]="selectedEmployeeNames"
   (closed)="closeEditorModal()"
   (back)="goBackToSelection()"
 ></app-appreciation-editor-modal>
