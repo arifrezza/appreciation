@@ -11,6 +11,7 @@ import {
 import { LanguageService, QualityResponse, SpellCorrection } from '../services/language.service';
 import { SpellCheckService, SpellError } from '../services/spell-check.service';
 import { AbbreviationDictionaryService } from '../services/abbreviation-dictionary.service';
+import { SpeechToTextService } from '../services/speech-to-text.service';
 import { Subject, forkJoin, EMPTY } from 'rxjs';
 import { debounceTime, filter, switchMap, takeUntil, catchError } from 'rxjs/operators';
 import Quill from 'quill';
@@ -46,10 +47,14 @@ export class AppreciationEditorModalComponent
     }
   };
 
+  isRecording = false;
+  isTranscribing = false;
+
   constructor(
     private languageService: LanguageService,
     private spellCheckService: SpellCheckService,
-    private abbreviationDictionaryService: AbbreviationDictionaryService
+    private abbreviationDictionaryService: AbbreviationDictionaryService,
+    private speechToTextService: SpeechToTextService
   ) { }
 
   /* =====================
@@ -587,6 +592,51 @@ countAllPassed(): number {
     );
     return languageRule?.status === 'success' &&
       this.userText.trim().length > 0;
+  }
+
+  /* =====================
+     VOICE INPUT
+  ====================== */
+
+  toggleRecording(): void {
+    if (this.isRecording) {
+      this.isRecording = false;
+      this.isTranscribing = true;
+
+      this.speechToTextService.stopRecording().then(blob => {
+        if (blob.size === 0) {
+          this.isTranscribing = false;
+          return;
+        }
+
+        this.speechToTextService.transcribe(blob).subscribe({
+          next: (res) => {
+            this.isTranscribing = false;
+            if (res.text && this.quillEditor) {
+              const length = this.quillEditor.getLength() - 1;
+              const currentText = this.quillEditor.getText().replace(/\n$/, '');
+              // Add a space before the transcribed text if there's existing text
+              const prefix = currentText.length > 0 && !currentText.endsWith(' ') ? ' ' : '';
+              this.quillEditor.insertText(length, prefix + res.text);
+              // Trigger the content change flow
+              this.plainText = this.quillEditor.getText().replace(/\n$/, '');
+              this.userText = this.plainText;
+              this.onTextChange();
+              this.scheduleSpellCheck();
+            }
+          },
+          error: () => {
+            this.isTranscribing = false;
+          }
+        });
+      });
+    } else {
+      this.speechToTextService.startRecording().then(() => {
+        this.isRecording = true;
+      }).catch(() => {
+        // Microphone permission denied or unavailable
+      });
+    }
   }
 
   postAppreciation(): void {

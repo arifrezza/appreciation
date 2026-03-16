@@ -26,6 +26,9 @@ POST   /api/rewrite-appreciation   controllers.AppreciationRewriteController.rew
 # Autocomplete API for ghost text inline sentence completion
 POST   /api/autocomplete           controllers.AutocompleteController.autocomplete
 
+# Speech-to-text transcription via local Whisper model
+POST   /api/transcribe             controllers.TranscribeController.transcribe
+
 
 # Static assets from public directory
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
