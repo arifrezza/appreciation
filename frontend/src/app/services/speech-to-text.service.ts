@@ -14,6 +14,12 @@ export class SpeechToTextService {
   constructor(private http: HttpClient) {}
 
   startRecording(): Promise<void> {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      return Promise.reject(new Error(
+        'Microphone access requires a secure context (HTTPS or localhost).'
+      ));
+    }
+
     return navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
       this.audioChunks = [];
       this.mediaRecorder = new MediaRecorder(stream);

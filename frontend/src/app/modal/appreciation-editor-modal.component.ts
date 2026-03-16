@@ -625,16 +625,24 @@ countAllPassed(): number {
               this.scheduleSpellCheck();
             }
           },
-          error: () => {
+          error: (err) => {
+            console.error('Transcription failed:', err);
             this.isTranscribing = false;
+            alert('Transcription failed. Make sure the Whisper service is running on port 8000.');
           }
         });
       });
     } else {
       this.speechToTextService.startRecording().then(() => {
         this.isRecording = true;
-      }).catch(() => {
-        // Microphone permission denied or unavailable
+      }).catch((err) => {
+        console.error('Microphone error:', err);
+        const msg = err?.message || '';
+        if (msg.includes('secure context')) {
+          alert('Microphone access requires HTTPS or localhost. Please check your URL.');
+        } else {
+          alert('Could not access microphone. Please allow microphone permission and try again.');
+        }
       });
     }
   }
