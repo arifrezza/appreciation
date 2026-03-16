@@ -1031,6 +1031,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   padding: 0;
+  overflow: hidden;
 }
 
 .mic-btn:hover {

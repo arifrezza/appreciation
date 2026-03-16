@@ -82,7 +82,14 @@
                   (click)="toggleRecording()"
                   [disabled]="isTranscribing"
                   [title]="isRecording ? 'Stop recording' : isTranscribing ? 'Transcribing...' : 'Voice input'">
-            <img *ngIf="!isTranscribing && !isRecording" src="/assets/mic_static.png" class="mic-icon" alt="Mic" />
+            <svg *ngIf="!isTranscribing && !isRecording" class="mic-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="8" y="2" width="8" height="12" rx="4" stroke="currentColor" stroke-width="2"/>
+              <line x1="9.5" y1="7" x2="14.5" y2="7" stroke="#2dd4bf" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="9.5" y1="10" x2="14.5" y2="10" stroke="#2dd4bf" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M5 11a7 7 0 0 0 14 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <line x1="12" y1="18" x2="12" y2="22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <line x1="9" y1="22" x2="15" y2="22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
             <img *ngIf="isRecording" src="/assets/mic_animated.gif" class="mic-icon mic-icon-animated" alt="Recording..." />
             <span *ngIf="isTranscribing" class="transcribing-spinner"></span>
           </button>
