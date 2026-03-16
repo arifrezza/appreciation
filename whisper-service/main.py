@@ -13,7 +13,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-model = whisper.load_model("base")
+model = whisper.load_model("small")
 
 
 @app.post("/transcribe")
