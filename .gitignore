@@ -29,3 +29,6 @@ Thumbs.db
 
 # Playwright screenshots
 .playwright-mcp/
+
+# Telegram bridge
+claude-telegram-bridge/

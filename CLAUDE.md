@@ -2,6 +2,77 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with this repository.
 
+## Playwright Testing — Video & Screenshot Rules (ALWAYS follow these)
+
+### Video: Segmented screen recording
+ALWAYS start recording before any Playwright test and stop after. The Telegram bot auto-sends each 60s chunk as it completes.
+
+```bash
+# 1. Start recording BEFORE the test
+REC_PID=$(bash claude-telegram-bridge/record_test.sh start)
+
+# 2. Run Playwright test (do NOT use recordVideo in browser context)
+
+# 3. Stop AFTER the test completes
+bash claude-telegram-bridge/record_test.sh stop $REC_PID
+```
+
+- Videos saved to `~/.playwright-mcp/videos/` as 60s `.mp4` chunks
+- Bot auto-sends each chunk to Telegram as it completes
+
+### Screenshots: Capture on every significant UI event
+ALWAYS save screenshots to `~/.playwright-mcp/` — the bot auto-sends them to Telegram.
+
+Take a screenshot whenever ANY of the following happens:
+
+| Event | Example |
+|---|---|
+| Page navigation / route change | Login → employee list, modal opens |
+| User action completed | Employee selected, button clicked |
+| API response received | Quality score updated, AI rewrite returned |
+| UI state changes visibly | Abusive warning appears, score jumps, ghost text shows |
+| Error or warning shown | POST disabled, abusive detected, validation fails |
+| Popover / tooltip appears | Spell check suggestion popover, hover tooltip |
+| Score changes significantly | 0% → any%, or crosses 40%, 70% thresholds |
+| AI suggestion box appears or is used | "Enhance with AI" result shown, "Use Suggestion" clicked |
+| Tab key appends ghost text | Before and after |
+| Final result / success state | "Appreciation posted" alert, congratulations message |
+
+#### Screenshot helper pattern (use in every test):
+```javascript
+const ss = (name) => page.screenshot({ path: `/Users/arifrezza/.playwright-mcp/${name}.png` });
+// Usage: await ss('event-description');
+```
+
+#### DOM mutation watcher (use for automatic event-driven screenshots):
+```javascript
+// Add this inside browser_run_code to auto-screenshot on UI changes
+let ssIndex = 0;
+const autoSS = async (label) => {
+  await page.screenshot({ path: `/Users/arifrezza/.playwright-mcp/auto-${String(ssIndex++).padStart(2,'0')}-${label}.png` });
+};
+
+// Watch for score ring color changes
+await page.exposeFunction('onScoreChange', async (score) => {
+  await autoSS(`score-changed-${score}pct`);
+});
+
+// After each API response, take screenshot
+// After abusive warning appears
+await page.waitForSelector('[class*="abusive"], [class*="warning"]', { timeout: 5000 })
+  .then(() => autoSS('abusive-warning'))
+  .catch(() => {});
+```
+
+## Test Login Credentials (ALWAYS use these — do not ask the user)
+
+| Field | Value |
+|---|---|
+| Email | `arif@company.com` |
+| Password | `123` |
+
+These are the default test credentials for all Playwright tests on this app.
+
 ## Project Overview
 
 An employee appreciation platform with AI-powered content moderation and typing error fix. Employees can log in, select a colleague, and write appreciation messages that are checked for abusive language using a dual-layer moderation system (local word list + OpenAI API).
