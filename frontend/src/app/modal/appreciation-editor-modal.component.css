@@ -1076,8 +1076,8 @@
 }
 
 .mic-icon {
-  width: 22px;
-  height: 22px;
+  width: 16px;
+  height: 16px;
   object-fit: contain;
   pointer-events: none;
 }
