@@ -1081,3 +1081,8 @@
   object-fit: contain;
   pointer-events: none;
 }
+
+.mic-icon-animated {
+  width: 24px;
+  height: 24px;
+}

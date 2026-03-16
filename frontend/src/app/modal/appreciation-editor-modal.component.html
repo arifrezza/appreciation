@@ -83,7 +83,7 @@
                   [disabled]="isTranscribing"
                   [title]="isRecording ? 'Stop recording' : isTranscribing ? 'Transcribing...' : 'Voice input'">
             <img *ngIf="!isTranscribing && !isRecording" src="/assets/mic_static.png" class="mic-icon" alt="Mic" />
-            <img *ngIf="isRecording" src="/assets/mic_animated.gif" class="mic-icon" alt="Recording..." />
+            <img *ngIf="isRecording" src="/assets/mic_animated.gif" class="mic-icon mic-icon-animated" alt="Recording..." />
             <span *ngIf="isTranscribing" class="transcribing-spinner"></span>
           </button>
           <span class="char-count">{{ userText.length }}</span>
