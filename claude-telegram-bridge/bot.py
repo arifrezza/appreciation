@@ -1462,34 +1462,53 @@ async def watch_playwright_videos(app):
                     if fpath in _seen_videos:
                         continue
                     _seen_videos.add(fpath)
-                    # Wait until no process has the file open (ffmpeg closed it = fully written)
+                    # Wait until file size is stable (ffmpeg closed it = fully written)
+                    prev_size = -1
+                    stable_count = 0
                     for _ in range(60):  # up to 2 minutes
                         await asyncio.sleep(2)
-                        if os.path.getsize(fpath) == 0:
+                        try:
+                            cur_size = os.path.getsize(fpath)
+                        except OSError:
                             continue
-                        result = subprocess.run(["lsof", fpath], capture_output=True)
-                        if result.returncode != 0:  # no process has it open
-                            break
+                        if cur_size == 0:
+                            prev_size = 0
+                            continue
+                        if cur_size == prev_size:
+                            stable_count += 1
+                            if stable_count >= 2:  # size unchanged for 4s = file closed
+                                break
+                        else:
+                            stable_count = 0
+                        prev_size = cur_size
                     if os.path.getsize(fpath) == 0:
                         log.warning(f"Video still empty after wait, skipping: {fpath}")
                         continue
-                    # For .webm (Playwright recordings): convert to mp4 with faststart
-                    # For .mp4 (screen recordings): already have faststart from segment_format_options
+                    # Remux all videos through ffmpeg to fix 0-duration moov atom issue.
+                    # Segmented MP4s from ffmpeg have 0 duration until remuxed with faststart.
+                    # .webm files need full re-encode to h264; .mp4 segments just need -c copy remux.
                     send_path = fpath
                     tmp_path = fpath + ".sending.mp4"
-                    if fpath.endswith(".webm"):
-                        try:
-                            ffmpeg_bin = shutil.which("ffmpeg") or "/opt/homebrew/bin/ffmpeg"
+                    try:
+                        ffmpeg_bin = shutil.which("ffmpeg") or "/opt/homebrew/bin/ffmpeg"
+                        if fpath.endswith(".webm"):
                             subprocess.run(
                                 [ffmpeg_bin, "-i", fpath, "-c:v", "libx264", "-preset", "fast",
                                  "-movflags", "+faststart", "-y", tmp_path],
                                 capture_output=True, timeout=120
                             )
-                            if os.path.exists(tmp_path) and os.path.getsize(tmp_path) > 0:
-                                send_path = tmp_path
-                                log.info(f"Converted webm to mp4: {tmp_path}")
-                        except Exception as e:
-                            log.warning(f"ffmpeg conversion failed, sending original: {e}")
+                        else:
+                            # Remux mp4 with -c copy to fix duration metadata
+                            subprocess.run(
+                                [ffmpeg_bin, "-i", fpath, "-c", "copy",
+                                 "-movflags", "+faststart", "-y", tmp_path],
+                                capture_output=True, timeout=120
+                            )
+                        if os.path.exists(tmp_path) and os.path.getsize(tmp_path) > 0:
+                            send_path = tmp_path
+                            log.info(f"Remuxed video for sending: {tmp_path}")
+                    except Exception as e:
+                        log.warning(f"ffmpeg remux failed, sending original: {e}")
                     for attempt in range(3):
                         try:
                             for uid in ALLOWED_USER_IDS:
